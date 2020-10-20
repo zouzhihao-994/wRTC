@@ -21,8 +21,8 @@ hangupVideoBtn.addEventListener('click', hangupHandle);
 
 // 本地流和远端流
 let localStream
-let pc1
-let pc2
+let pc1 // peer connection 1
+let pc2 // peer connection 2
 
 // 本地视频和远端视频
 let startTime;
@@ -32,11 +32,9 @@ const remoteVideo = document.getElementById("remoteVideo");
 localVideo.addEventListener('loadedmetadata', function () {
     console.log(`Remote video videoWidth: ${this.videoWidth}px , videoHeight:${this.videoHeight}px`);
 })
-
 remoteVideo.addEventListener('loadedmetadata', function () {
     console.log(`Remote video videoWidth: ${this.videoWidth}px,  videoHeight: ${this.videoHeight}px`);
 })
-
 remoteVideo.addEventListener('resize', () => {
     console.log(`Remote video size changed to ${remoteVideo.videoWidth}x${remoteVideo.videoHeight}`);
     if (startTime) {
@@ -46,16 +44,15 @@ remoteVideo.addEventListener('resize', () => {
     }
 });
 
-// 设置约束
+// 设置约束,只传输视频 video
 const mediaStreamConstraints = {
     video: true,
-    audio: true
+    audio: false
 }
-
 // 仅交换视频
 const offerOptions = {
     offerToReceiveVideo: 1,
-    offerToReceiveAudio: 1
+    // offerToReceiveAudio: -1
 }
 
 function getName(pc) {
@@ -71,30 +68,36 @@ async function startHandler() {
     console.log("requesting local stream")
     startVideoBtn.disabled = true
     try {
-        // 获取本地音视频流
-        // 调用getUserMedia获取
+        // 获取本地视频流
         const stream = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints);
         console.log("Received local stream")
+        // video窗口设置为本地流的内容
         localVideo.srcObject = stream
         localStream = stream
+
         callVideoBtn.disabled = false
     } catch (e) {
         alert(`getUserMedia error: ${e.message}`)
     }
 }
 
+// 获取sdp Semantics
 function getSelectedSdpSemantics() {
     const sdpSemanticsSelect = document.querySelector('#sdpSemantics');
     const option = sdpSemanticsSelect.options[sdpSemanticsSelect.selectedIndex];
     return option.value === '' ? {} : {sdpSemantics: option.value};
 }
 
+// 发起连接
 async function callHandler() {
     callVideoBtn.disabled = true;
     hangupVideoBtn.disabled = false;
-    console.log('Starting call');
     startTime = window.performance.now();
+    console.log('Starting call , time：' + startTime);
+
+    // 获取视频轨
     const videoTracks = localStream.getVideoTracks();
+    // 获取音频轨
     const audioTracks = localStream.getAudioTracks();
     if (videoTracks.length > 0) {
         console.log(`Using video device: ${videoTracks[0].label}`);
@@ -102,14 +105,17 @@ async function callHandler() {
     if (audioTracks.length > 0) {
         console.log(`Using audio device: ${audioTracks[0].label}`);
     }
-    const configuration = getSelectedSdpSemantics();
-    console.log('RTCPeerConnection configuration:', configuration);
-    pc1 = new RTCPeerConnection(configuration);
+
+    const sdpSemantics = getSelectedSdpSemantics();
+    console.log('RTCPeerConnection configuration:', sdpSemantics);
+
+    pc1 = new RTCPeerConnection(sdpSemantics);
     console.log('Created local peer connection object pc1');
     pc1.addEventListener('icecandidate', e => onIceCandidate(pc1, e));
-    pc2 = new RTCPeerConnection(configuration);
+    pc2 = new RTCPeerConnection(sdpSemantics);
     console.log('Created remote peer connection object pc2');
     pc2.addEventListener('icecandidate', e => onIceCandidate(pc2, e));
+
     pc1.addEventListener('iceconnectionstatechange', e => onIceStateChange(pc1, e));
     pc2.addEventListener('iceconnectionstatechange', e => onIceStateChange(pc2, e));
     pc2.addEventListener('track', gotRemoteStream);
@@ -130,9 +136,12 @@ function onCreateSessionDescriptionError(error) {
     console.log(`Failed to create session description: ${error.toString()}`);
 }
 
+// 创建offer
 async function onCreateOfferSuccess(desc) {
     console.log(`Offer from pc1\n${desc.sdp}`);
     console.log('pc1 setLocalDescription start');
+
+    // 设置本地的sdp信息
     try {
         await pc1.setLocalDescription(desc);
         onSetLocalSuccess(pc1);
@@ -140,6 +149,7 @@ async function onCreateOfferSuccess(desc) {
         onSetSessionDescriptionError();
     }
 
+    // 接收方设置 remoteDescription
     console.log('pc2 setRemoteDescription start');
     try {
         await pc2.setRemoteDescription(desc);
@@ -148,6 +158,7 @@ async function onCreateOfferSuccess(desc) {
         onSetSessionDescriptionError();
     }
 
+    // 接收方设置 answer
     console.log('pc2 createAnswer start');
     // Since the 'remote' side has no media stream we need
     // to pass in the right constraints in order for it to
@@ -158,6 +169,8 @@ async function onCreateOfferSuccess(desc) {
     } catch (e) {
         onCreateSessionDescriptionError(e);
     }
+
+    // description 交换完成
 }
 
 function onSetLocalSuccess(pc) {
@@ -179,15 +192,19 @@ function gotRemoteStream(e) {
     }
 }
 
+// 创建answer,creat answer -> send answer -> receive answer
 async function onCreateAnswerSuccess(desc) {
     console.log(`Answer from pc2:\n${desc.sdp}`);
     console.log('pc2 setLocalDescription start');
+    // 接收方设置local description
     try {
         await pc2.setLocalDescription(desc);
         onSetLocalSuccess(pc2);
     } catch (e) {
         onSetSessionDescriptionError(e);
     }
+
+    // 发送方接收answer
     console.log('pc1 setRemoteDescription start');
     try {
         await pc1.setRemoteDescription(desc);
