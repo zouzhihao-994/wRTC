@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div id='videoDiv'>
+    <video width="320" height="240" id="video1" autoplay controls>test</video>
+</div>
+<div id='screenDiv'>
+</div>
+<div>
+    <button id="join">加入房间</button>
+<!--    <button id="publish"> Publish</button>-->
+    <button id="share"> 视频分享</button>
+    <button id="close">关闭视频</button>
+    <button id="closeScreen">关闭视频流</button>
+</div>
+<div>
+    <form action="demo_form.asp">
+        account: <input type="text" name="fname" id="fname"><br>
+        room: <input type="text" name="lname" id="lname"><br>
+    </form>
+</div>
+<br>
+
+长宽比: <select id="aspectRatio">
+    <option value="default">Default</option>
+    <option value="1.77">16:9</option>
+    <option value="1.33">4:3</option>
+    <option value="2.35">21:9</option>
+    <option value="1.4">14:10</option>
+    <option value="1.9">19:10</option>
+</select><br>
+
+帧率: <select id="frameRate">
+    <option value="default">Default</option>
+    <option>30</option>
+    <option>25</option>
+    <option>15</option>
+    <option>5</option>
+</select><br>
+
+解析率: <select id="resolutions">
+    <option value="default">Default</option>
+    <option value="fit-screen">Fit Screen</option>
+    <option>4K</option>
+    <option>2K</option>
+    <option>1080p</option>
+    <option>720p</option>
+</select><br>
+
+cursor: <select id="cursor">
+    <option value="default">Default</option>
+    <option>always</option>
+    <option>never</option>
+    <option>motion</option>
+</select><br>
+
+展示对象: <select id="displaySurface">
+    <option value="default">Default</option>
+    <option>monitor</option>
+    <option>window</option>
+    <option>application</option>
+    <option>browser</option>
+</select><br>
+
+</body>
+</html>
