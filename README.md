@@ -1,2 +1,0 @@
-# wRTC
-web rtc sample
