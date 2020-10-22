@@ -10,6 +10,20 @@ class Client {
         this._roomId = roomId;
         this._token = token
         this._socketUrl = url
+
+        this._isJoin = false
+    }
+
+    joinSuccess() {
+        this._isJoin = true
+    }
+
+    exit() {
+        this._isJoin = false
+    }
+
+    get isJoin() {
+        return this._isJoin
     }
 
     get account() {

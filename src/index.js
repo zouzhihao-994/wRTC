@@ -39,6 +39,7 @@ function joinHandler() {
 
     // 创建Socket
     socket = new Socket(socketUrl,client)
+    socket.init()
     socket.toString()
 
     //
