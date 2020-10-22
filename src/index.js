@@ -37,12 +37,10 @@ function joinHandler() {
     client = new Client(accountInputValue.value, roomInputValue.value, 'v', socketUrl)
     client.toString()
 
-    // socket = io.connect(socketUrl, {transports: ['websocket'], timeout: 9999999});
-    // socket = io(socketUrl);
-    // socket.emit('join', {roomid: client.roomId, account: client.account})
     // 创建Socket
     socket = new Socket(socketUrl,client)
     socket.toString()
+
     //
     socket.emitJoin();
 }

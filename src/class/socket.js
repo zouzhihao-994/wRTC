@@ -25,7 +25,7 @@ class Socket {
 
     emitJoin() {
         console.log("socket emit join msg")
-        this.socketServer.emit('join', {roomid: this._client.roomId, account: this._client.account,})
+        this.socketServer.emit('join', {roomId: this._client.roomId, account: this._client.account,})
     }
 
 
