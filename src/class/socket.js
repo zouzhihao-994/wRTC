@@ -155,6 +155,14 @@ class Socket {
         this._socketServer.emit('join', {roomId: this._client.roomId, account: this._client.account,})
     }
 
+    emitAnswer(peer) {
+        this._client.emit('answer', {
+            'sdp': this._client.remoteScreen[peer.peerName].localDescription,
+            roomId: this._client.roomId,
+            peerName: peer.peerName
+        })
+    }
+
     emitIceCandidate(candidate, roomId, peerName) {
         this._socketServer.emit('_ice_candidate', {
             'candidate': candidate,
@@ -200,7 +208,7 @@ function getPeerConnection(p, client, socketServer) {
     }
 
     // 当发生协议变更时
-    p.onnegotiationneeded = (event) => {
+    p.onnegotiationneeded = () => {
         createOffer(peer.peerName, p)
     }
 
@@ -222,7 +230,6 @@ function onPeerAddStream(peer) {
     } catch (e) {
         let video = document.createElement("video");
         div.appendChild(video);
-
         video.srcObject = peer.stream;
         video.setAttribute("id", peer.account);
         video.setAttribute("width", "320");
