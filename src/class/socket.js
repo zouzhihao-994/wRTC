@@ -1,6 +1,7 @@
 'use strict';
+
 import io from 'socket.io-client';
-import {screenSuffix, iceServer} from "../index";
+import {screenSuffix, iceServer, localScreen, localStream} from "../index";
 
 class Socket {
 

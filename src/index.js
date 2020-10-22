@@ -4,6 +4,7 @@ import io from 'socket.io-client';
 
 import {Client} from "./class/Client";
 import {Socket} from "./class/Socket";
+
 const screenSuffix = '@ScreenShare';
 const iceServer = {
     "iceServers": [{
@@ -14,6 +15,9 @@ const iceServer = {
 }
 
 window.onload = init
+
+let localStream;
+let localScreen;
 
 // 绑定元素
 let joinButton = document.getElementById("joinBtn")
@@ -46,7 +50,7 @@ function joinHandler() {
     client.toString()
 
     // 创建Socket
-    socket = new Socket(socketUrl,client)
+    socket = new Socket(socketUrl, client)
     socket.init()
     socket.toString()
 
@@ -71,5 +75,5 @@ function closeStreamHandler() {
 
 }
 
-export {screenSuffix,iceServer}
+export {screenSuffix, iceServer, localStream, localScreen}
 
