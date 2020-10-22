@@ -21,9 +21,23 @@ class Socket {
      * 2.
      */
     init() {
+        // 监听joined
         this._socketServer.on('joined', (data, account) => {
             this.onJoined(data, account)
         })
+        // 监听offer
+        this._socketServer.on('offer', (data, account) => {
+            this.onOffer(data, account)
+        })
+        // 监听answer
+        this._socketServer.on("answer", (data, account) => {
+            this.onAnswer(data, account)
+        })
+        // 监听iceCandidate
+        this._socketServer.on("__ice_candidate", (data, account) => {
+            this.onIceCandidate(data, account)
+        })
+
     }
 
     // 监听joined消息
