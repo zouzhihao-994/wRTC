@@ -78,6 +78,78 @@ class Socket {
         }
     }
 
+    onOffer(peer, client) {
+        // 屏幕共享的形式
+        if (peer.peerName.endsWith(screenSuffix)) {
+            client.remoteScreen[peer.peerName] && client.remoteScreen[peer.peerName].setRemoteDescription(peer.sdp, () => {
+                try {
+                    if (localScreen) {
+                        localScreen.getTracks().forEach(track => {
+                            client.remoteScreen[peer.peerName].addTrack(track, localScreen)
+                        })
+                    }
+                } catch (e) {
+                    console.error('take_offer event screen addTrack error', e);
+                }
+                client.remoteScreen[peer.peerName].createAnswer().then((desc) => {
+                    client.remoteScreen[peer.peerName].setLocalDescription(desc, client.emitAnswer(peer))
+                })
+            }, (err) => {
+                console.error("setRemoteDescription error:", err);
+            })
+        } else { //音视频形式
+            client.peer[peer.peerName] && client.peer[peer.peerName].setRemoteDescription(peer.sdp, () => {
+                try {
+                    if (localScreen) {
+                        localScreen.getTracks().forEach(track => {
+                            client.peer[peer.peerName].addTrack(track, localStream)
+                        })
+                    }
+                } catch (e) {
+                    console.error('take_offer event localVideo addTrack error', e);
+                }
+                client.peer[peer.peerName].createAnswer().then(desc => {
+                    client.peer[peer.peerName].setLocalDescription(desc, () => {
+                        client.emitAnswer(peer)
+                    })
+                })
+            }, (err) => {
+                console.error("setRemoteDescription error:", err)
+            })
+        }
+    }
+
+    onAnswer(peer, client) {
+        // 屏幕共享模式
+        if (peer.peerName.endsWith(screenSuffix)) {
+            client.remoteScreenName[peer.peerName] && client.remoteScreenName[peer.peerName].setRemoteDescription(peer.sdp, function () {
+            }, (err) => {
+                console.error('setRemoteDescription error:', err, v.peerName);
+            })
+        } else { // 音视频模式
+            client.peer[peer.peerName] && client.peer[peerName].setRemoteDescription(peer.sdp, function () {
+            }, (err) => {
+                console.error('setRemoteDescription error:', err, peer.peerName);
+            })
+        }
+    }
+
+    onIceCandidate(peer, client) {
+        if (peer.peerName.endsWith(screenSuffix)) {
+            if (peer.candidate) {
+                client.remoteScreen[peer.peerName] && client.remoteScreen[peer.peerName].addIceCandidate(peer.candidate).catch((err) => {
+                    console.error('addIceCandidate error:', err);
+                })
+            }
+        } else {
+            if (peer.candidate) {
+                client.peer[peer.peerName] && client.peer[peer.peerName].addIceCandidate(peer.candidate).catch((err) => {
+                    console.error('addIceCandidate error:', err);
+                });
+            }
+        }
+    }
+
     emitJoin() {
         console.log("socket emit join msg")
         this._socketServer.emit('join', {roomId: this._client.roomId, account: this._client.account,})
