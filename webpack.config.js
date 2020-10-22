@@ -1,14 +1,13 @@
-
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
     entry: {
-        '../src/web_rtc': './src/main.js',
-        '../src/web_rtc.min': './src/main.js'
+        './web_rtc': './src/index.js',
+        './web_rtc.min': './src/index.js'
     },
     output: {
         filename: '[name].js',
-        library: 'RTCClient',
+        // library: 'RTCClient',
         globalObject: 'this',
         libraryTarget: 'umd',
     },
