@@ -21,6 +21,7 @@ class Client {
 
         // 连接对象的流, K:peerName. V:stream
         this._peerStream = {}
+        // 远端client的屏幕，K:peerName,V:peer screen
         this._remoteScreen = {}
         this._onRemoveScreenStream = null
         this._onRemoteScreenStream = null
@@ -37,21 +38,9 @@ class Client {
         this._remoteScreen[remoteScreenName] = peer
     }
 
-    setOnRemoteScreenStream(account, stream) {
-        this._onRemoteScreenStream = {
-            account: account,
-            stream: stream
-        }
-    }
-
-
-    setOnRemoveScreenStream(value) {
-        this._onRemoveScreenStream = value;
-    }
-
     // 判断是否存在远端
-    existRemoteScreenList(remoteScreenName) {
-        return this._remoteScreenList[remoteScreenName] !== null
+    existRemoteScreen(remoteScreenName) {
+        return this._remoteScreen[remoteScreenName] !== null
     }
 
     addPeerStream(account, stream) {
@@ -63,10 +52,6 @@ class Client {
         return this._peer[peerName] !== null
     }
 
-    addRoomParticipantsId(value) {
-        this._participants = value;
-    }
-
     setIsJoin(value) {
         this._isJoin = value
     }
@@ -75,36 +60,16 @@ class Client {
         this._peer[peerName] = peer;
     }
 
-    get onlineClientList() {
-        return this._onlineClient;
-    }
-
     get remoteScreen() {
         return this._remoteScreen;
-    }
-
-    get roomParticipantsId() {
-        return this._participants;
-    }
-
-    get peerStream() {
-        return this._peerStream;
-    }
-
-    get onRemoteScreenStream() {
-        return this._onRemoteScreenStream;
     }
 
     get onRemoveScreenStream() {
         return this._onRemoveScreenStream;
     }
 
-    get peerNameList() {
-        return this._peerNameList;
-    }
-
-    get isJoin() {
-        return this._isJoin
+    get peer() {
+        return this._peer;
     }
 
     get account() {
@@ -113,14 +78,6 @@ class Client {
 
     get roomId() {
         return this._roomId;
-    }
-
-    get token() {
-        return this._token;
-    }
-
-    get socketUrl() {
-        return this._socketUrl;
     }
 
     toString() {
