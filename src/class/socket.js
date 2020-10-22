@@ -43,29 +43,32 @@ class Socket {
         }
         console.log("room ", this._client.roomId, "的参与者id: ", accounts)
         // 设置参与者
-        this._client.setOnlineClientList(accountIdArr)
+        this._client.setOnlineClient(accountIdArr)
 
         if (participants.length > 1) {
             participants.forEach(p => {
+                console.log("peer:", p)
                 let peer = {}
                 let arr = [p.account, this._client.account]
                 peer.peerName = arr.sort().join('-')
                 peer.remoteScreenName = peer.peerName + screenSuffix
 
                 // 如果存在对端连接对象，本地创建音视频流PeerConnection对象进行连接
-                if (!this._client.existPeerName(peer.peerName) && p.account !== this._client.account) {
+                // 前提需要有一个client进行share
+                if (!this._client.existPeer(peer.peerName) && p.account !== this._client.account) {
                     getPeerConnection(peer, this._client, this._socketServer);
                 }
 
                 // 如果存在远端屏幕流，创建桌面共享流PeerConnection对象
-                if (!this._client.existRemoteScreenList(peer.remoteScreenName) && p.account !== this._client.account) {
+                // 前提需要至少有一个client进行share
+                if (!this._client.existRemoteScreen(peer.remoteScreenName) && p.account !== this._client.account) {
                     getScreenConnection(peer, this._client, this._socketServer);
                 }
             })
 
             if (account === this._client.account) {
-                for (let k in this._client.peerNameList) {
-                    createOffer(k, this._client.peerNameList[k]);
+                for (let k in this._client.peer) {
+                    createOffer(k, this._client.peer[k]);
                 }
                 // 创建共享桌面连接的offer
                 for (let k in this._client.remoteScreen) {
