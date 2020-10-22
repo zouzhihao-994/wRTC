@@ -5,11 +5,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-<!--    <script src="./web_rtc.js"></script>-->
 </head>
 
 <body>
+<div id='videoDiv'>
+    <video width="320" height="240" id="video1" autoplay controls>test</video>
+</div>
+<div id='screenDiv'></div>
+<div>
+    <button id="joinBtn">加入房间</button>
+    <button id="shareBtn"> 视频分享</button>
+    <button id="closeBtn">关闭视频</button>
+    <button id="closeScreenBtn">关闭视频流</button>
+</div>
+<br>
+<div>
+    账号: <input type="text" name="account" id="account"><br>
+    房间号: <input type="text" name="room" id="room"><br>
+</div>
+<br>
 
+<script src="./web_rtc.js"></script>
 </body>
 
 </html>
