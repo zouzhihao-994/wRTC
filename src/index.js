@@ -4,6 +4,14 @@ import io from 'socket.io-client';
 
 import {Client} from "./class/Client";
 import {Socket} from "./class/Socket";
+const screenSuffix = '@ScreenShare';
+const iceServer = {
+    "iceServers": [{
+        'url': 'turn:119.23.33.178:3478',
+        'username': 'leung',
+        'credential': '362203'
+    }]
+}
 
 window.onload = init
 
@@ -42,7 +50,7 @@ function joinHandler() {
     socket.init()
     socket.toString()
 
-    //
+    // 发送join消息
     socket.emitJoin();
 }
 
@@ -63,4 +71,5 @@ function closeStreamHandler() {
 
 }
 
+export {screenSuffix,iceServer}
 
