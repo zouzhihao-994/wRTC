@@ -52,7 +52,7 @@ function getScreenConnection(p, client, socketServer) {
             }
             try {
                 let account = getRawPeerName(p.remoteScreenName.split(screenSuffix)[0], client.account)
-                client.addRemoteScreen(account, screenStream)
+                socketServer.onRemoteScreenStream({account:account,stream:screenStream})
             } catch (e) {
                 console.error('[Caller error] onRemoteScreenStream', e)
             }
@@ -72,7 +72,7 @@ function getScreenConnection(p, client, socketServer) {
     }
 
     // 添加远端
-    client.addRemoteScreen(p.remoteScreenName, pc)
+    client.addRemoteScreenPC(p.remoteScreenName, pc)
 
 }
 

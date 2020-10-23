@@ -1,7 +1,7 @@
 'use strict';
 
 import io from 'socket.io-client';
-import {div, screenSuffix, iceServer, localScreen, localStream, getRawPeerName} from "../index";
+import {div, screenSuffix, localScreen, localStream, getRawPeerName, screenDiv} from "../index";
 import {createOffer, getScreenConnection, getPeerConnection} from "./RtcPeer";
 
 class Socket {
@@ -76,7 +76,7 @@ class Socket {
                     }
 
                     // 与p进行屏幕流连接，前提是需要p有正在进行屏幕共享
-                    if (!this._client.existRemoteScreen(peer.remoteScreenName)) {
+                    if (!this._client.existRemoteScreenPC(peer.remoteScreenName)) {
                         getScreenConnection(peer, this._client, this);
                     }
                 }
@@ -208,6 +208,23 @@ class Socket {
                 });
             }
         }
+    }
+
+    /**
+     * 创建一个video
+     * @param peer map类型,包含两个字段 peerName,stream
+     */
+    onRemoteScreenStream(peer) {
+        let video = document.createElement("video")
+        screenDiv.appendChild(video)
+
+        video.srcObject = peer.stream
+        video.setAttribute("id", peer.peerName);
+        video.setAttribute("width", "400");
+        video.setAttribute("height", "300");
+        video.setAttribute("autoplay", "");
+        video.setAttribute("controls", "");
+
     }
 
     emitJoin() {

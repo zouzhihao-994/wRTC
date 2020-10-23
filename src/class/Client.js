@@ -15,13 +15,13 @@ class Client {
         // 参与该room的所有其他客户端id
         this._roomParticipantsId = []
 
-        // 连接对象,K:peerName. V:peer
+        // 连接对象,K:peerName. V:peer pc
         this._peer = {}
 
         // 连接对象的流, K:peerName. V:stream
         this._peerStream = {}
-        // 远端client的屏幕，K:peerName,V:peer screen
-        this._remoteScreen = {}
+        // 远端client的屏幕，K:peerName,V:peer pc
+        this._remoteScreenPC = {}
         this._removeScreenStream = null
         this._remoteScreenStream = null
 
@@ -43,13 +43,13 @@ class Client {
         this._onlineClient = list;
     }
 
-    addRemoteScreen(remoteScreenName, peer) {
-        this._remoteScreen[remoteScreenName] = peer
+    addRemoteScreenPC(remoteScreenName, peer) {
+        this._remoteScreenPC[remoteScreenName] = peer
     }
 
     // 判断是否存在远端
-    existRemoteScreen(remoteScreenName) {
-        return this._remoteScreen[remoteScreenName]
+    existRemoteScreenPC(remoteScreenName) {
+        return this._remoteScreenPC[remoteScreenName]
     }
 
     addPeerStream(account, stream) {
@@ -70,7 +70,7 @@ class Client {
     }
 
     get remoteScreen() {
-        return this._remoteScreen;
+        return this._remoteScreenPC;
     }
 
     get remoteScreenStream() {

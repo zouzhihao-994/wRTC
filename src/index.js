@@ -23,6 +23,7 @@ let shareButton = document.getElementById("shareBtn");
 let accountInputValue = document.getElementById('account');
 let roomInputValue = document.getElementById('room');
 let div = document.querySelector('div#videoDiv');
+let screenDiv = document.querySelector('div#screenDiv');
 
 
 // 客户端信息
@@ -66,6 +67,7 @@ function shareHandler() {
         console.log("选择需要共享的界面")
         return navigator.mediaDevices.getDisplayMedia().then(stream => {
             localStream = stream;
+            // 设置本地流
             client.setLocalScreenStream(stream)
             // 将视频流发送到所有远端屏幕上
             for (let peerName in client.remoteScreen) {
@@ -82,7 +84,7 @@ function shareHandler() {
                             let state = {account: client.account, type: 'screenMute', value: false}
                             socket.emitUpdateState(state, client.account)
                         }
-                        client.remoteScreen[peerName].addTrack(track, client.localScreenStream)
+                        client.remoteScreenStream[peerName].addTrack(track, client.localScreenStream)
                     })
                 } catch (e) {
                     console.error('share getDisplayMedia addTrack error', e);
@@ -93,22 +95,10 @@ function shareHandler() {
     }
 }
 
-function publishHandler() {
-
-}
-
-function closeVideoHandler() {
-
-}
-
-function closeStreamHandler() {
-
-}
-
 function getRawPeerName(str, account) {
     let names = str.split('-');
     return names[0] === account ? names[1] : names[0];
 }
 
-export {div,screenSuffix, iceServer, localStream, localScreen, getRawPeerName}
+export {div,screenSuffix, iceServer, localStream, localScreen,screenDiv, getRawPeerName}
 
