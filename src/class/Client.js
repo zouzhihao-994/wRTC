@@ -1,5 +1,4 @@
 'use strict';
-import io from 'socket.io-client';
 
 /**
  * 客户端对象，负责保存客户端基本信息与提供相关方法
@@ -28,6 +27,16 @@ class Client {
 
         // 该房间的在线客户端id
         this._onlineClient = []
+        this._localScreenStream = null
+    }
+
+
+    get localScreenStream() {
+        return this._localScreenStream;
+    }
+
+    setLocalScreenStream(stream) {
+        this._localScreenStream = stream;
     }
 
     setOnlineClient(list) {
@@ -40,24 +49,16 @@ class Client {
 
     // 判断是否存在远端
     existRemoteScreen(remoteScreenName) {
-        return this._remoteScreen[remoteScreenName] !== null
+        return this._remoteScreen[remoteScreenName]
     }
 
     addPeerStream(account, stream) {
         this._peerStream[account] = stream;
     }
 
-    addRemoveScreenStream(account, stream) {
-        this._removeScreenStream[account] = stream
-    }
-
-    addRemoteScreenStream(account, screenStream) {
-        this._remoteScreenStream[account] = screenStream
-    }
-
-// 判断是否存在peerName
+    // 判断是否存在peerName
     existPeer(peerName) {
-        return this._peer[peerName] !== null
+        return this._peer[peerName]
     }
 
     setIsJoin(value) {
