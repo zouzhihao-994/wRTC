@@ -23,8 +23,8 @@ class Client {
         this._peerStream = {}
         // 远端client的屏幕，K:peerName,V:peer screen
         this._remoteScreen = {}
-        this._onRemoveScreenStream = null
-        this._onRemoteScreenStream = null
+        this._removeScreenStream = null
+        this._remoteScreenStream = null
 
         // 该房间的在线客户端id
         this._onlineClient = []
@@ -47,7 +47,15 @@ class Client {
         this._peerStream[account] = stream;
     }
 
-    // 判断是否存在peerName
+    addRemoveScreenStream(account, stream) {
+        this._removeScreenStream[account] = stream
+    }
+
+    addRemoteScreenStream(account, screenStream) {
+        this._remoteScreenStream[account] = screenStream
+    }
+
+// 判断是否存在peerName
     existPeer(peerName) {
         return this._peer[peerName] !== null
     }
@@ -57,15 +65,19 @@ class Client {
     }
 
     addPeer(peerName, peer) {
-        this._peer[peerName] = peer;
+        this._peer[peerName] = peer
     }
 
     get remoteScreen() {
         return this._remoteScreen;
     }
 
+    get remoteScreenStream() {
+        return this._remoteScreenStream();
+    }
+
     get onRemoveScreenStream() {
-        return this._onRemoveScreenStream;
+        return this._removeScreenStream;
     }
 
     get peer() {

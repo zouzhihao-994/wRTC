@@ -26,8 +26,8 @@ class Socket {
             this.onJoined(data, account)
         })
         // 监听offer
-        this._socketServer.on('offer', (data, account) => {
-            this.onOffer(data, account)
+        this._socketServer.on('offer', (data) => {
+            this.onOffer(data, this._client)
         })
         // 监听answer
         this._socketServer.on("answer", (data, account) => {
@@ -61,32 +61,36 @@ class Socket {
 
         if (participants.length > 1) {
             participants.forEach(p => {
-                console.log("peer:", p)
-                let peer = {}
-                let arr = [p.account, this._client.account]
-                peer.peerName = arr.sort().join('-')
-                peer.remoteScreenName = peer.peerName + screenSuffix
+                if (p.account !== this._client.account) {
+                    console.log("peer:", p)
+                    let peer = {}
+                    peer.peerName = p.account + '-' + this._client.account
+                    peer.remoteScreenName = peer.peerName + screenSuffix
+                    console.log("peerName:", peer.peerName, "peerScreenName:", peer.remoteScreenName)
 
-                // 如果存在对端连接对象，本地创建音视频流PeerConnection对象进行连接
-                // 前提需要有一个client进行share
-                if (!this._client.existPeer(peer.peerName) && p.account !== this._client.account) {
-                    getPeerConnection(peer, this._client, this._socketServer);
-                }
+                    // 尝试与p进行音视频连接，前提是需要p有正在进行音视频共享
+                    if (this._client.existPeer(peer.peerName)) {
+                        getPeerConnection(peer, this._client, this._socketServer);
+                    }
 
-                // 如果存在远端屏幕流，创建桌面共享流PeerConnection对象
-                // 前提需要至少有一个client进行share
-                if (!this._client.existRemoteScreen(peer.remoteScreenName) && p.account !== this._client.account) {
-                    getScreenConnection(peer, this._client, this._socketServer);
+                    // 与p进行屏幕流连接，前提是需要p有正在进行屏幕共享
+                    if (this._client.existRemoteScreen(peer.remoteScreenName)) {
+                        getScreenConnection(peer, this._client, this._socketServer);
+                    }
                 }
             })
 
+            // 如果account是本client，给其他所有peer发送offer sdp
             if (account === this._client.account) {
-                for (let k in this._client.peer) {
-                    createOffer(k, this._client.peer[k]);
+                // p = peerName , peer[p] = peer
+                for (let p in this._client.peer) {
+                    console.log("send connect offer to", this._client.peer[p])
+                    createOffer(p,this._client.peer[p], this._client, this);
                 }
                 // 创建共享桌面连接的offer
-                for (let k in this._client.remoteScreen) {
-                    createOffer(k, this._client.remoteScreen[k]);
+                for (let p in this._client.remoteScreen) {
+                    console.log("send connect offer to", this._client.peer[p])
+                    createOffer(p,this._client.remoteScreen[p], this._client, this);
                 }
             }
         }
@@ -169,6 +173,15 @@ class Socket {
         this._socketServer.emit('join', {roomId: this._client.roomId, account: this._client.account,})
     }
 
+    emitOffer(peerName, pc, roomId) {
+        console.log("socket emit sdp offer")
+        this._socketServer.emit('offer', {
+            'sdp': pc.localDescription,
+            roomId: roomId,
+            peerName: peerName
+        })
+    }
+
     emitAnswer(peer) {
         this._client.emit('answer', {
             'sdp': this._client.remoteScreen[peer.peerName].localDescription,
@@ -193,14 +206,11 @@ class Socket {
 // 获取对等方的连接以及设置一些回调函数
 function getPeerConnection(p, client, socketServer) {
 
-    let peer = new RTCPeerConnection(iceServer);
+    let pc = new RTCPeerConnection(iceServer);
     console.log("create peer connection ", p)
 
     // 如果检测到对方媒体流连接，将其绑定到一个video标签上输出
-    // The RTCPeerConnection property ontrack is an EventHandler
-    // which specifies a function to be called when the track  event occurs,
-    // indicating that a track has been added to the RTCPeerConnection.
-    peer.ontrack = (event) => {
+    pc.ontrack = (event) => {
         if (event.streams) {
             let peerName = getRawPeerName(p.peerName, client.account)
             try {
@@ -214,20 +224,21 @@ function getPeerConnection(p, client, socketServer) {
         }
     }
 
-    // 当收到icecandidate信息时将发送ice给房间的人
+    // 发送icecandidate信息时给p
     p.onicecandidate = (event) => {
         if (event.candidate) {
+            console.log("send onicecandidate to ", p)
             socketServer.emitIceCandidate(event.candidate, client.roomId, p.peerName)
         }
     }
 
     // 当发生协议变更时
     p.onnegotiationneeded = () => {
-        createOffer(peer.peerName, p)
+        createOffer(p.peerName,pc, client, socketServer)
     }
 
     // 保存对端名称
-    client.addPeer(peer.peerName, peer)
+    client.addPeer(p.peerName, pc)
     console.log("getPeerConnection ok")
 }
 
@@ -236,7 +247,7 @@ function getRawPeerName(str, account) {
     return names[0] === account ? names[1] : names[0];
 }
 
-// peer加入时设置video
+// 有peer加入时设置video
 function onPeerAddStream(peer) {
     try {
         let existVideo = document.querySelector('video#' + peer.peerName);
@@ -253,23 +264,41 @@ function onPeerAddStream(peer) {
     }
 }
 
-// 在收到自己Joined事件时,创建OFFER,
-// peerName为对方的名字，peer为自己的RTCPeerConnection对象
-function createOffer(peerName, peer) {
-    console.log("create offer", peerName, peer)
+/**
+ * 在收到自己Joined事件时,创建OFFER
+ * peer为自己的RTCPeerConnection对象
+ *
+ * @param peerName 对方peer的名称
+ * @param pc RTCPeerConnection {@link RTCPeerConnection}
+ * @param client Client类 {@link Client}
+ * @param socketServer SocketServer类 {@link Socket}
+ */
+function createOffer(peerName, pc, client, socketServer) {
+    console.log("create offer", pc)
+    pc.createOffer({
+        // offerToReceiveAudio:1,
+        offerToReceiveVideo: 1
+    }).then((desc) => {
+        pc.setLocalDescription(desc, () => {
+            socketServer.emitOffer(peerName, pc, client.roomId)
+        }, (err) => {
+            console.log('create offer Error]', err)
+        })
+    })
 }
 
 function getScreenConnection(p, client, socketServer) {
-    let peer = new RTCPeerConnection(iceServer);
+    let pc = new RTCPeerConnection(iceServer);
 
     // 如果检测到对方媒体流连接，将其绑定到一个video上
-    peer.ontrack = (event) => {
+    pc.ontrack = (event) => {
         // 存在流
         if (event.streams) {
             let screenStream = event.streams[0];
             let screenTrack = screenStream.getTracks()[0]
             screenTrack.onmute = e => {
                 try {
+                    // todo share时设置remove srceen
                     client.onRemoveScreenStream && client.onRemoveScreenStream();
                 } catch (e) {
                     console.error('[Caller error] onRemoveScreenStream,', error)
@@ -277,26 +306,26 @@ function getScreenConnection(p, client, socketServer) {
             }
             try {
                 let account = getRawPeerName(p.remoteScreenName.split(screenSuffix)[0], client.account)
-                client.onRemoveScreenStream && client.onRemoveScreenStream(account, screenStream)
+                client.remoteScreenStream && client.addRemoteScreen(account, screenStream)
             } catch (e) {
                 console.error('[Caller error] onRemoteScreenStream', e)
             }
         }
 
         // 发送ICE给其他客户端
-        peer.onicecandidate = (event) => {
+        pc.onicecandidate = (event) => {
             if (event.candidate) {
                 socketServer.emitIceCandidate(event.candidate, client.roomId, p.remoteScreenName)
             }
         }
 
         // 设置监听
-        peer.onnegotiationneeded = (event) => {
-            createOffer(p.remoteScreenName, peer)
+        pc.onnegotiationneeded = (event) => {
+            createOffer(p.peerName,pc, client, socketServer)
         }
 
         // 添加远端
-        client.addRemoteScreen(p.remoteScreenName, peer)
+        client.addRemoteScreen(p.remoteScreenName, pc)
     }
 
 

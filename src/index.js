@@ -52,14 +52,12 @@ function joinHandler() {
     // 创建Socket
     socket = new Socket(socketUrl, client)
     socket.init()
-    socket.toString()
 
     // 发送join消息
     socket.emitJoin();
 }
 
 function shareHandler() {
-
 
 }
 
