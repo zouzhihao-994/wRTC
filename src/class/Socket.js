@@ -28,11 +28,11 @@ class Socket {
         })
         // 监听offer
         this._socketServer.on('offer', (data) => {
-            this.onOffer(data, this._client)
+            this.onOffer(data)
         })
         // 监听answer
-        this._socketServer.on("answer", (data, account) => {
-            this.onAnswer(data, account)
+        this._socketServer.on("answer", (data) => {
+            this.onAnswer(data)
         })
         // 监听iceCandidate
         this._socketServer.on("__ice_candidate", (data, account) => {
@@ -102,11 +102,11 @@ class Socket {
         // 屏幕共享的形式
         console.log("on offer : peer:", peer, " client: ", this._client)
         if (peer.peerName.endsWith(screenSuffix)) {
-            this._client.remoteScreen[peer.peerName] && client.remoteScreen[peer.peerName].setRemoteDescription(peer.sdp, () => {
+            this._client.remoteScreen[peer.peerName] && this._client.remoteScreen[peer.peerName].setRemoteDescription(peer.sdp, () => {
                 try {
                     if (localScreen) {
                         localScreen.getTracks().forEach(track => {
-                            client.remoteScreen[peer.peerName].addTrack(track, localScreen)
+                            this._client.remoteScreen[peer.peerName].addTrack(track, localScreen)
                         })
                     }
                 } catch (e) {
@@ -119,7 +119,7 @@ class Socket {
                 console.error("setRemoteDescription error:", err);
             })
         } else { //音视频形式
-            this._client.peer[peer.peerName] && client.peer[peer.peerName].setRemoteDescription(peer.sdp, () => {
+            this._client.peer[peer.peerName] && this._client.peer[peer.peerName].setRemoteDescription(peer.sdp, () => {
 
                 try {
                     if (localScreen) {
@@ -131,8 +131,8 @@ class Socket {
                     console.error('take_offer event localVideo addTrack error', e);
                 }
                 this._client.peer[peer.peerName].createAnswer().then(desc => {
-                    client.peer[peer.peerName].setLocalDescription(desc, () => {
-                        client.emitAnswer(peer)
+                    this._client.peer[peer.peerName].setLocalDescription(desc, () => {
+                        this._client.emitAnswer(peer)
                     })
                 })
             }, (err) => {
@@ -141,18 +141,18 @@ class Socket {
         }
     }
 
-    onAnswer(peer, client) {
-        console.log("on answer peer ", peer)
+    onAnswer(data) {
+        console.log("on answer peer ", data)
         // 屏幕共享模式
-        if (peer.peerName.endsWith(screenSuffix)) {
-            client.remoteScreenName[peer.peerName] && client.remoteScreenName[peer.peerName].setRemoteDescription(peer.sdp, function () {
+        if (data.peerName.endsWith(screenSuffix)) {
+            this._client.remoteScreenName[data.peerName] && this._client.remoteScreenName[data.peerName].setRemoteDescription(data.sdp, function () {
             }, (err) => {
-                console.error('setRemoteDescription error:', err, v.peerName);
+                console.error('setRemoteDescription error:', err, data.peerName);
             })
         } else { // 音视频模式
-            client.peer[peer.peerName] && client.peer[peer.peerName].setRemoteDescription(peer.sdp, function () {
+            this._client.peer[data.peerName] && this._client.peer[data.peerName].setRemoteDescription(data.sdp, function () {
             }, (err) => {
-                console.error('setRemoteDescription error:', err, peer.peerName);
+                console.error('setRemoteDescription error:', err, data.peerName);
             })
         }
     }

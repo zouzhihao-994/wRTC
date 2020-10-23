@@ -67,12 +67,12 @@ function getScreenConnection(p, client, socketServer) {
     }
 
     // 设置监听
-    pc.onnegotiationneeded = (event) => {
+    pc.onnegotiationneeded = () => {
         createOffer(p.peerName, pc, client, socketServer)
     }
 
     // 添加远端
-    client.addRemoteScreenPC(p.remoteScreenName, pc)
+    client.addRemoteScreen(p.remoteScreenName, pc)
 
 }
 

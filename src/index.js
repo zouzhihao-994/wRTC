@@ -74,7 +74,7 @@ function shareHandler() {
                 try {
                     client.localScreenStream.getTracks().forEach(track => {
                         // 当用户手工点击停止录制时触发
-                        track.onended = event => {
+                        track.onended = () => {
                             console.log("onended")
                             localScreen = null
                             client.setLocalScreenStream(null)
@@ -84,7 +84,7 @@ function shareHandler() {
                             let state = {account: client.account, type: 'screenMute', value: false}
                             socket.emitUpdateState(state, client.account)
                         }
-                        client.remoteScreenStream[peerName].addTrack(track, client.localScreenStream)
+                        client.remoteScreen[peerName].addTrack(track, client.localScreenStream)
                     })
                 } catch (e) {
                     console.error('share getDisplayMedia addTrack error', e);
