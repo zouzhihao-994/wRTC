@@ -47,7 +47,7 @@ function init() {
 
 function joinHandler() {
     // 创建客户端
-    client = new Client(accountInputValue.value, roomInputValue.value, 'v', socketUrl)
+    client = new Client(accountInputValue.value, roomInputValue.value, socketUrl)
     client.toString()
 
     // 创建Socket
@@ -100,5 +100,5 @@ function getRawPeerName(str, account) {
     return names[0] === account ? names[1] : names[0];
 }
 
-export {div,screenSuffix, iceServer, localStream, localScreen,screenDiv, getRawPeerName}
+export {div, screenSuffix, iceServer, localStream, localScreen, screenDiv, getRawPeerName}
 

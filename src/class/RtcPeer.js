@@ -45,7 +45,7 @@ function getScreenConnection(p, client, socketServer) {
             let screenStream = event.streams[0];
             let screenTrack = screenStream.getTracks()[0]
             screenTrack.onmute = () => {
-                console.log("----onmute：",screenTrack)
+                console.log("----onmute：", screenTrack)
                 try {
                     client.onRemoveScreenStream();
                 } catch (e) {
@@ -54,7 +54,7 @@ function getScreenConnection(p, client, socketServer) {
             }
             try {
                 let account = getRawPeerName(p.remoteScreenName.split(screenSuffix)[0], client.account)
-                socketServer.onRemoteScreenStream({account:account,stream:screenStream})
+                socketServer.onRemoteScreenStream({account: account, stream: screenStream})
             } catch (e) {
                 console.error('[Caller error] onRemoteScreenStream', e)
             }
@@ -80,7 +80,7 @@ function getScreenConnection(p, client, socketServer) {
 
 /**
  * 创建对端pc，然后设置回调函数
- * @param p 对端peer {peerName,remoteScreen} {@link #Socket#onJoined peer变量}
+ * @param p map类型 {peerName,remoteScreen} {@link #Socket#onJoined peer变量}
  * @param client 本客户端 {@link Client}
  * @param socketServer socket服务类
  */
@@ -91,7 +91,7 @@ function getPeerConnection(p, client, socketServer) {
 
     // 如果检测到对方媒体流连接，将其绑定到一个video标签上输出
     pc.ontrack = (event) => {
-        console.log("接收到track",pc)
+        console.log("接收到track", pc)
         if (event.streams) {
             socketServer.onTrack(p, event, client)
         }
@@ -99,7 +99,7 @@ function getPeerConnection(p, client, socketServer) {
 
     // 发送icecandidate信息时给p
     pc.onicecandidate = (event) => {
-        console.log("接收到icecandidate",pc)
+        console.log("接收到icecandidate", pc)
         if (event.candidate) {
             socketServer.emitIceCandidate(event.candidate, client.roomId, p.peerName)
         }

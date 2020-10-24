@@ -43,11 +43,6 @@ class Socket {
 
     // 监听joined消息
     onJoined(participants, account) {
-        // 如果account是本客户端的，表示本机join成功
-        if (this._client.account === account) {
-            console.log("client 加入房间")
-            this._client.setIsJoin(true)
-        }
 
         // 信令服务器返回的data是所有加入该房间的客户端信息
         let accountIdArr = []
@@ -57,9 +52,6 @@ class Socket {
             accounts = accounts + "," + accountIdArr[part]
         }
         console.log("room ", this._client.roomId, "的参与者id: ", accounts)
-
-        // 设置参与者
-        this._client.setOnlineClient(accountIdArr)
 
         if (participants.length > 1) {
             participants.forEach(p => {
@@ -164,9 +156,14 @@ class Socket {
         }
     }
 
-    onTrack(p, event) {
+    /**
+     *
+     * @param map
+     * @param event
+     */
+    onTrack(map, event) {
         console.log("检测到pc存在数据流")
-        let account = getRawPeerName(p.peerName, this._client.account)
+        let account = getRawPeerName(map.peerName, this._client.account)
         try {
             this.onPeerAddStream({account: account, stream: event.streams[0]})
         } catch (e) {
