@@ -73,10 +73,6 @@ class Client {
         return this._remoteScreen;
     }
 
-    get remoteScreenStream() {
-        return this._remoteScreenStream;
-    }
-
     get onRemoveScreenStream() {
         return this._removeScreenStream;
     }
