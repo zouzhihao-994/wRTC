@@ -2,7 +2,7 @@
 
 import {Client} from "./class/Client";
 import {Socket} from "./class/Socket";
-import {getScreenMedia} from "./class/RtcPeer"
+import {getScreenMediaAndAddTrack} from "./class/RtcPeer"
 
 const screenSuffix = '@ScreenShare';
 const iceServer = {
@@ -39,6 +39,12 @@ let socketUrl = local_env
 joinButton.addEventListener('click', joinHandler)
 shareButton.addEventListener('click', shareHandler)
 
+/**
+ * join事件
+ * join会触发系统初始化，初始化主要初始化两个组件，client和socket。
+ * client {@class Client}
+ * socket {@class Socket}
+ */
 function joinHandler() {
     // 创建客户端
     client = new Client(accountInputValue.value, roomInputValue.value, socketUrl)
@@ -53,8 +59,8 @@ function joinHandler() {
 }
 
 /**
- * 如果本地已经存在
- * @returns {getScreenMedia}
+ * 分享事件
+ * 如果本地存在screen stream，使用该流，否则新建一个screen stream
  */
 function shareHandler() {
     // 如果存在本地screen
@@ -62,7 +68,7 @@ function shareHandler() {
         console.log("检测到本地存在screen流")
     } else {
         // 获取桌面内容
-        getScreenMedia()
+        getScreenMediaAndAddTrack()
     }
 }
 
@@ -77,5 +83,5 @@ function getRawPeerName(str, account) {
     return names[0] === account ? names[1] : names[0];
 }
 
-export {client,socket,div, screenSuffix, iceServer, localStream, localScreen, screenDiv, getRawPeerName}
+export {client, socket, div, screenSuffix, iceServer, localStream, localScreen, screenDiv, getRawPeerName}
 

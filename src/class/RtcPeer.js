@@ -104,8 +104,9 @@ function createPeerConnection(p, client, socketServer) {
 
 /**
  * 获取本地屏幕的图像
+ * 然后添加screen stream track到所有对端pc中
  */
-function getScreenMedia() {
+function getScreenMediaAndAddTrack() {
     navigator.mediaDevices.getDisplayMedia().then(stream => {
         localScreen = stream;
         // 设置本地流
@@ -125,7 +126,6 @@ function getScreenMedia() {
         }
         return Promise.resolve(stream)
     })
-
 }
 
-export {createOffer, createScreenConnection, createPeerConnection, getScreenMedia}
+export {createOffer, createScreenConnection, createPeerConnection, getScreenMediaAndAddTrack}

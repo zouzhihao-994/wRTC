@@ -1,7 +1,9 @@
 'use strict';
 
 /**
- * 客户端对象，负责保存客户端基本信息与提供相关方法
+ * 客户端
+ * 主要负责保存客户端基本信息与提供相关方法
+ * 同时也保存和对端相关的数据。
  */
 class Client {
     constructor(account, roomId, url) {

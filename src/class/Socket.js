@@ -4,6 +4,9 @@ import io from 'socket.io-client';
 import {div, screenSuffix, localScreen, localStream, getRawPeerName, screenDiv} from "../index";
 import {createOffer, createScreenConnection, createPeerConnection} from "./RtcPeer";
 
+/**
+ * 提供与socket操作相关的接口。
+ */
 class Socket {
 
     /**
