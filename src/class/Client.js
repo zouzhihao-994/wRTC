@@ -11,6 +11,8 @@ class Client {
         this._roomId = roomId;
         this._socketUrl = url
 
+        this._onlinePeer = {}
+
         // 存储本地屏幕流
         this._localScreenStream = null
         // 用于存储视频流的对端,K:peerName. V:peer pc
@@ -19,6 +21,19 @@ class Client {
         this._remoteScreen = {}
         // 用于存储对端的stream, K:peerName. V:peer stream
         this._peerStream = {}
+    }
+
+
+    getOnlinePeer(peerName) {
+        return this._onlinePeer[peerName];
+    }
+
+    get onlinePeer() {
+        return this._onlinePeer;
+    }
+
+    addOnlinePeer(peerName,peer) {
+        this._onlinePeer[peerName] = peer;
     }
 
     setLocalScreenStream(stream) {
