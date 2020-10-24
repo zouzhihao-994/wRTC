@@ -56,7 +56,7 @@ function createScreenConnection(p, client, socketServer) {
     // 发送ICE给其他客户端
     pc.onicecandidate = (event) => {
         if (event.candidate) {
-            socketServer.emitIceCandidate(event.candidate, client.roomId, p.remoteScreenName)
+            socketServer.emitIceCandidate(event.candidate, client.roomId, p.remoteScreenName,SCREEN_SHARE)
         }
     }
 
@@ -90,7 +90,7 @@ function createPeerConnection(p, client, socketServer) {
     pc.onicecandidate = (event) => {
         console.log("接收到icecandidate", pc)
         if (event.candidate) {
-            socketServer.emitIceCandidate(event.candidate, client.roomId, p.peerName)
+            socketServer.emitIceCandidate(event.candidate, client.roomId, p.peerName,AV_SHARE)
         }
     }
 

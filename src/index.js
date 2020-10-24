@@ -102,7 +102,7 @@ function shareHandler() {
                 // 设置ice监听
                 pc.onicecandidate = (event) => {
                     if (event.candidate) {
-                        socket.emitIceCandidate(event.candidate, client.roomId, peerName)
+                        socket.emitIceCandidate(event.candidate, client.roomId, peerName,SCREEN_SHARE)
                     }
                 }
                 // 设置negotiation监听
