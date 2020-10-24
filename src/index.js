@@ -12,8 +12,6 @@ const iceServer = {
     }]
 }
 
-window.onload = init
-
 let localStream;
 let localScreen;
 
@@ -24,7 +22,6 @@ let accountInputValue = document.getElementById('account');
 let roomInputValue = document.getElementById('room');
 let div = document.querySelector('div#videoDiv');
 let screenDiv = document.querySelector('div#screenDiv');
-
 
 // 客户端信息
 let client;
@@ -41,10 +38,6 @@ let socketUrl = local_env
 joinButton.addEventListener('click', joinHandler)
 shareButton.addEventListener('click', shareHandler)
 
-function init() {
-    console.log("app init")
-}
-
 function joinHandler() {
     // 创建客户端
     client = new Client(accountInputValue.value, roomInputValue.value, socketUrl)
@@ -59,12 +52,10 @@ function joinHandler() {
 }
 
 function shareHandler() {
-    console.log("点击分享按钮")
     // 如果存在本地视频流
     if (localStream) {
         console.log("检测到本地存在视频流")
     } else {
-        console.log("选择需要共享的界面")
         return navigator.mediaDevices.getDisplayMedia().then(stream => {
             localStream = stream;
             // 设置本地流
@@ -73,17 +64,10 @@ function shareHandler() {
             for (let peerName in client.remoteScreen) {
                 try {
                     client.localScreenStream.getTracks().forEach(track => {
-                        // 当用户手工点击停止录制时触发
-                        track.onended = () => {
-                            console.log("onended")
-                            localScreen = null
-                            client.setLocalScreenStream(null)
-                            client.onRemoveScreenStream && client.onRemoveScreenStream({
-                                account: getRawPeerName(" ", client.account)
-                            })
-                            let state = {account: client.account, type: 'screenMute', value: false}
-                            socket.emitUpdateState(state, client.account)
-                        }
+                        // 设置监听onended事件
+                        track.onended = socket.onEnded
+
+                        // 添加远端
                         client.remoteScreen[peerName].addTrack(track, client.localScreenStream)
                     })
                 } catch (e) {
@@ -95,6 +79,12 @@ function shareHandler() {
     }
 }
 
+/**
+ * 获取对端peer的account
+ * @param str 完整的名称，例如"11-22",11为本端的account，22为对端的名称
+ * @param account 本端的名称
+ * @returns {*|string}
+ */
 function getRawPeerName(str, account) {
     let names = str.split('-');
     return names[0] === account ? names[1] : names[0];

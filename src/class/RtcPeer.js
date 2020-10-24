@@ -3,8 +3,7 @@
 import {getRawPeerName, iceServer, screenSuffix} from "../index";
 
 /**
- * 在收到自己Joined事件时,创建OFFER
- * peer为自己的RTCPeerConnection对象
+ * 创建OFFER
  *
  * @param peerName 对方peer的名称
  * @param pc RTCPeerConnection {@link RTCPeerConnection}
@@ -28,12 +27,12 @@ function createOffer(peerName, pc, client, socketServer) {
 }
 
 /**
- * 获取屏幕共享流
+ * 创建屏幕共享连接对象pc，然后对pc添加监听器
  * @param p 对端peer {peerName,remoteScreen} {@link #Socket#onJoined peer变量}
  * @param client 客户端对象 {@class Client}
  * @param socketServer socket对象
  */
-function getScreenConnection(p, client, socketServer) {
+function createScreenConnection(p, client, socketServer) {
     let pc = new RTCPeerConnection(iceServer);
 
     // 如果检测到对方媒体流连接，将其绑定到一个video上
@@ -44,14 +43,6 @@ function getScreenConnection(p, client, socketServer) {
             console.log("存在stream", event)
             let screenStream = event.streams[0];
             let screenTrack = screenStream.getTracks()[0]
-            screenTrack.onmute = () => {
-                console.log("----onmute：", screenTrack)
-                try {
-                    client.onRemoveScreenStream();
-                } catch (e) {
-                    console.error('[Caller error] onRemoveScreenStream,', error)
-                }
-            }
             try {
                 let account = getRawPeerName(p.remoteScreenName.split(screenSuffix)[0], client.account)
                 socketServer.onRemoteScreenStream({account: account, stream: screenStream})
@@ -84,16 +75,15 @@ function getScreenConnection(p, client, socketServer) {
  * @param client 本客户端 {@link Client}
  * @param socketServer socket服务类
  */
-function getPeerConnection(p, client, socketServer) {
+function createPeerConnection(p, client, socketServer) {
 
     let pc = new RTCPeerConnection(iceServer);
     console.log("create peer connection ", pc)
 
     // 如果检测到对方媒体流连接，将其绑定到一个video标签上输出
     pc.ontrack = (event) => {
-        console.log("接收到track", pc)
         if (event.streams) {
-            socketServer.onTrack(p, event, client)
+            socketServer.onTrack(p.peerName, event.streams[0])
         }
     }
 
@@ -115,4 +105,4 @@ function getPeerConnection(p, client, socketServer) {
     console.log("getPeerConnection ok")
 }
 
-export {createOffer, getScreenConnection, getPeerConnection}
+export {createOffer, createScreenConnection, createPeerConnection}

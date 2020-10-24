@@ -2,7 +2,7 @@
 
 import io from 'socket.io-client';
 import {div, screenSuffix, localScreen, localStream, getRawPeerName, screenDiv} from "../index";
-import {createOffer, getScreenConnection, getPeerConnection} from "./RtcPeer";
+import {createOffer, createScreenConnection, createPeerConnection} from "./RtcPeer";
 
 class Socket {
 
@@ -17,9 +17,8 @@ class Socket {
     }
 
     /**
-     * 初始化socket，主要任务是：
-     * 1. 设置消息监听
-     * 2.
+     * 初始化socket
+     * 主要任务是：设置消息监听
      */
     init() {
         // 监听joined
@@ -41,7 +40,11 @@ class Socket {
 
     }
 
-    // 监听joined消息
+    /**
+     * 监听joined消息
+     * @param participants 该房间的所有客户端信息
+     * @param account 发送joined消息的客户端account
+     */
     onJoined(participants, account) {
 
         // 信令服务器返回的data是所有加入该房间的客户端信息
@@ -63,14 +66,14 @@ class Socket {
                     peer.remoteScreenName = peer.peerName + screenSuffix
                     console.log("peerName:", peer.peerName, "peerScreenName:", peer.remoteScreenName)
 
-                    // 尝试与p进行音视频连接，前提是需要p有正在进行音视频共享
                     if (!this._client.existPeer(peer.peerName)) {
-                        getPeerConnection(peer, this._client, this);
+                        // 创建一个pc，负责连接本端与对端的音视频
+                        createPeerConnection(peer, this._client, this);
                     }
 
-                    // 与p进行屏幕流连接，前提是需要p有正在进行屏幕共享
                     if (!this._client.existRemoteScreen(peer.remoteScreenName)) {
-                        getScreenConnection(peer, this._client, this);
+                        // 创建一个pc，负责连接本端与对端的屏幕共享
+                        createScreenConnection(peer, this._client, this);
                     }
                 }
             })
@@ -91,6 +94,10 @@ class Socket {
         }
     }
 
+    /**
+     * 监听offer消息
+     * @param peer
+     */
     onOffer(peer) {
         // 屏幕共享的形式
         console.log("on offer : peer:", peer, " client: ", this._client)
@@ -140,6 +147,23 @@ class Socket {
         console.log('===on offer end===')
     }
 
+    /**
+     * 监听ended消息
+     */
+    onEnded() {
+        localStream = null
+        // 本地流设为null
+        this._client.setLocalScreenStream(null)
+        // todo 移除远端流
+
+        let state = {account: this._client.account, type: 'screenMute', value: false}
+        this.emitUpdateState(state, this._client.account)
+    }
+
+    /**
+     * 监听answer消息
+     * @param data
+     */
     onAnswer(data) {
         console.log("on answer peer ", data)
         // 屏幕共享模式
@@ -157,21 +181,21 @@ class Socket {
     }
 
     /**
-     *
-     * @param map
-     * @param event
+     * 监听track的消息
+     * @param peerName
+     * @param stream
      */
-    onTrack(map, event) {
+    onTrack(peerName, stream) {
         console.log("检测到pc存在数据流")
-        let account = getRawPeerName(map.peerName, this._client.account)
+        let account = getRawPeerName(peerName, this._client.account)
         try {
-            this.onPeerAddStream({account: account, stream: event.streams[0]})
+            this.onPeerAddStream({account: account, stream: stream})
         } catch (e) {
             console.error("[Caller error] onPeerAddStream", e)
         }
 
         // 存储对方的流
-        this._client.addPeerStream(account, event.streams[0])
+        this._client.addPeerStream(account, stream)
     }
 
     /**
@@ -197,6 +221,10 @@ class Socket {
         }
     }
 
+    /**
+     * 监听ice candidate
+     * @param peer
+     */
     onIceCandidate(peer) {
         console.log("收到 ice candidate", peer)
         if (peer.peerName.endsWith(screenSuffix)) {
@@ -231,6 +259,9 @@ class Socket {
 
     }
 
+    /**
+     * 发送join消息
+     */
     emitJoin() {
         console.log("socket emit join msg")
         this._socketServer.emit('join', {roomId: this._client.roomId, account: this._client.account,})
@@ -252,7 +283,7 @@ class Socket {
     }
 
     /**
-     * 发送answer
+     * 发送answer消息
      * @param peerName 对方名称
      * @param roomId 房间id
      * @param localDescription 本地的描述信息
@@ -266,6 +297,12 @@ class Socket {
         })
     }
 
+    /**
+     * 发送ice candidate消息
+     * @param candidate
+     * @param roomId
+     * @param peerName
+     */
     emitIceCandidate(candidate, roomId, peerName) {
         console.log("发送 icecandidate ", candidate)
         this._socketServer.emit('_ice_candidate', {
@@ -275,6 +312,11 @@ class Socket {
         })
     }
 
+    /**
+     * 发送update state消息
+     * @param state
+     * @param account
+     */
     emitUpdateState(state, account) {
         this._socketServer.emit('updateClientState', {
             reqAccount: account,

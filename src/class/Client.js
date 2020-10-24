@@ -27,7 +27,6 @@ class Client {
         this._remoteScreen[remoteScreenName] = peer
     }
 
-    // 判断是否存在远端
     existRemoteScreen(remoteScreenName) {
         return this._remoteScreen[remoteScreenName]
     }
@@ -36,7 +35,6 @@ class Client {
         this._peerStream[account] = stream;
     }
 
-    // 判断是否存在peerName
     existPeer(peerName) {
         return this._peer[peerName]
     }
@@ -51,10 +49,6 @@ class Client {
 
     get remoteScreen() {
         return this._remoteScreen;
-    }
-
-    get onRemoveScreenStream() {
-        return this._removeScreenStream;
     }
 
     get peer() {
