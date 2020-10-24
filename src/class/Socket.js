@@ -35,8 +35,8 @@ class Socket {
             this.onAnswer(data)
         })
         // 监听iceCandidate
-        this._socketServer.on("__ice_candidate", (data, account) => {
-            this.onIceCandidate(data, account)
+        this._socketServer.on("__ice_candidate", (data) => {
+            this.onIceCandidate(data)
         })
 
     }
@@ -66,7 +66,8 @@ class Socket {
                 if (p.account !== this._client.account) {
                     console.log("peer:", p)
                     let peer = {}
-                    peer.peerName = p.account + '-' + this._client.account
+                    let arr = [p.account, this._client.account];
+                    peer.peerName = arr.sort().join('-');
                     peer.remoteScreenName = peer.peerName + screenSuffix
                     console.log("peerName:", peer.peerName, "peerScreenName:", peer.remoteScreenName)
 
@@ -76,7 +77,7 @@ class Socket {
                     }
 
                     // 与p进行屏幕流连接，前提是需要p有正在进行屏幕共享
-                    if (!this._client.existRemoteScreenPC(peer.remoteScreenName)) {
+                    if (!this._client.existRemoteScreen(peer.remoteScreenName)) {
                         getScreenConnection(peer, this._client, this);
                     }
                 }
@@ -113,16 +114,20 @@ class Socket {
                     console.error('take_offer event screen addTrack error', e);
                 }
                 this._client.remoteScreen[peer.peerName].createAnswer().then((desc) => {
-                    this.client.remoteScreen[peer.peerName].setLocalDescription(desc, this._client.emitAnswer(peer))
+                    console.log("=====", this._client.remoteScreen[peer.peerName])
+                    this._client.remoteScreen[peer.peerName].setLocalDescription(desc, () => {
+                        this.emitAnswer(peer.peerName, this._client.roomId, this._client.remoteScreen[peer.peerName].localDescription)
+                    })
                 })
             }, (err) => {
                 console.error("setRemoteDescription error:", err);
             })
         } else { //音视频形式
             this._client.peer[peer.peerName] && this._client.peer[peer.peerName].setRemoteDescription(peer.sdp, () => {
-
                 try {
+                    // 如果本地存在视频流，将视频流添加到对方pc中
                     if (localScreen) {
+                        console.log("==添加本地stream到对方pc中==")
                         localScreen.getTracks().forEach(track => {
                             this._client.peer[peer.peerName].addTrack(track, localStream)
                         })
@@ -130,22 +135,24 @@ class Socket {
                 } catch (e) {
                     console.error('take_offer event localVideo addTrack error', e);
                 }
-                this._client.peer[peer.peerName].createAnswer().then(desc => {
+                console.log("==准备发送emit==", this._client.peer[peer.peerName])
+                this._client.peer[peer.peerName] && this._client.peer[peer.peerName].createAnswer().then(desc => {
                     this._client.peer[peer.peerName].setLocalDescription(desc, () => {
-                        this._client.emitAnswer(peer)
+                        this.emitAnswer(peer.peerName, this._client.roomId, this._client.peer[peer.peerName].localDescription)
                     })
                 })
             }, (err) => {
                 console.error("setRemoteDescription error:", err)
             })
         }
+        console.log('===on offer end===')
     }
 
     onAnswer(data) {
         console.log("on answer peer ", data)
         // 屏幕共享模式
         if (data.peerName.endsWith(screenSuffix)) {
-            this._client.remoteScreenName[data.peerName] && this._client.remoteScreenName[data.peerName].setRemoteDescription(data.sdp, function () {
+            this._client.remoteScreen[data.peerName] && this._client.remoteScreen[data.peerName].setRemoteDescription(data.sdp, function () {
             }, (err) => {
                 console.error('setRemoteDescription error:', err, data.peerName);
             })
@@ -193,17 +200,17 @@ class Socket {
         }
     }
 
-    onIceCandidate(peer, client) {
-        console.log("on ice candidate peer ", peer)
+    onIceCandidate(peer) {
+        console.log("收到 ice candidate", peer)
         if (peer.peerName.endsWith(screenSuffix)) {
             if (peer.candidate) {
-                client.remoteScreen[peer.peerName] && client.remoteScreen[peer.peerName].addIceCandidate(peer.candidate).catch((err) => {
+                this._client.remoteScreen[peer.peerName].addIceCandidate(peer.candidate).catch((err) => {
                     console.error('addIceCandidate error:', err);
                 })
             }
         } else {
             if (peer.candidate) {
-                client.peer[peer.peerName] && client.peer[peer.peerName].addIceCandidate(peer.candidate).catch((err) => {
+                this._client.peer[peer.peerName].addIceCandidate(peer.candidate).catch((err) => {
                     console.error('addIceCandidate error:', err);
                 });
             }
@@ -235,23 +242,30 @@ class Socket {
     /**
      * 发送offer信息
      * @param peerName 对端peer name
-     * @param pc RTCPeerConnection {@class RTCPeerConnection }
+     * @param localDescription 描述信息 {@link RTCPeerConnection#localDescription}
      * @param roomId 房间id
      */
-    emitOffer(peerName, pc, roomId) {
+    emitOffer(peerName, localDescription, roomId) {
         console.log("socket emit sdp offer")
         this._socketServer.emit('offer', {
-            'sdp': pc.localDescription,
+            'sdp': localDescription,
             roomId: roomId,
             peerName: peerName
         })
     }
 
-    emitAnswer(peer) {
-        this._client.emit('answer', {
-            'sdp': this._client.remoteScreen[peer.peerName].localDescription,
-            roomId: this._client.roomId,
-            peerName: peer.peerName
+    /**
+     * 发送answer
+     * @param peerName 对方名称
+     * @param roomId 房间id
+     * @param localDescription 本地的描述信息
+     */
+    emitAnswer(peerName, roomId, localDescription) {
+        console.log("发送answer：peerName:", peerName, "roomId:", roomId, "localDescription:", localDescription)
+        this._socketServer.emit('answer', {
+            'sdp': localDescription,
+            roomId: roomId,
+            peerName: peerName
         })
     }
 

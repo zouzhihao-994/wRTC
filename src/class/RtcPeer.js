@@ -19,7 +19,8 @@ function createOffer(peerName, pc, client, socketServer) {
     }).then((desc) => {
         pc.setLocalDescription(desc, () => {
             console.log(peerName, "设置local description")
-            socketServer.emitOffer(peerName, pc, client.roomId)
+            // 发送offer信息
+            socketServer.emitOffer(peerName, pc.localDescription, client.roomId)
         }, (err) => {
             console.log('create offer Error]', err)
         })
@@ -44,6 +45,7 @@ function getScreenConnection(p, client, socketServer) {
             let screenStream = event.streams[0];
             let screenTrack = screenStream.getTracks()[0]
             screenTrack.onmute = () => {
+                console.log("----onmute：",screenTrack)
                 try {
                     client.onRemoveScreenStream();
                 } catch (e) {
@@ -68,7 +70,7 @@ function getScreenConnection(p, client, socketServer) {
 
     // 设置监听
     pc.onnegotiationneeded = () => {
-        createOffer(p.peerName, pc, client, socketServer)
+        createOffer(p.remoteScreenName, pc, client, socketServer)
     }
 
     // 添加远端
