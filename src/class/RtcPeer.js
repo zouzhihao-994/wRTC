@@ -1,25 +1,26 @@
 'use strict';
 
-import {client, socket, getRawPeerName, iceServer, screenSuffix, localScreen} from "../index";
+import {client, socket, getRawPeerName, iceServer, screenSuffix, SCREEN_SHARE, AV_SHARE} from "../index";
 
 /**
  * 创建OFFER
  *
- * @param peerName 对方peer的名称
+ * @param account 对端的account
  * @param pc RTCPeerConnection {@link RTCPeerConnection}
  * @param client Client类 {@link Client}
  * @param socketServer SocketServer类
+ * @param mediaType 视频类型，音视频{@link AV_SHARE} or 屏幕共享{@link SCREEN_SHARE}
  */
-function createOffer(peerName, pc, client, socketServer) {
-    console.log(pc, "create offer to", peerName)
+function createOffer(account, pc, client, socketServer,mediaType) {
+    console.log(">>> send offer to", account)
     pc.createOffer({
         // offerToReceiveAudio:1,
         offerToReceiveVideo: 1
     }).then((desc) => {
         pc.setLocalDescription(desc, () => {
-            console.log(peerName, "设置local description")
+            console.log(">>> 设置local description")
             // 发送offer信息
-            socketServer.emitOffer(peerName, pc.localDescription, client.roomId)
+            socketServer.emitOffer(account, pc.localDescription, client.roomId, mediaType)
         }, (err) => {
             console.log('create offer Error]', err)
         })
@@ -61,7 +62,7 @@ function createScreenConnection(p, client, socketServer) {
 
     // 设置监听
     pc.onnegotiationneeded = () => {
-        createOffer(p.remoteScreenName, pc, client, socketServer)
+        createOffer(p.remoteScreenName, pc, client, socketServer,SCREEN_SHARE)
     }
 
     // 添加远端
@@ -94,7 +95,7 @@ function createPeerConnection(p, client, socketServer) {
     }
 
     pc.onnegotiationneeded = () => {
-        createOffer(p.peerName, pc, client, socketServer)
+        createOffer(p.peerName, pc, client, socketServer,AV_SHARE)
     }
 
     // 保存对端名称
@@ -108,7 +109,6 @@ function createPeerConnection(p, client, socketServer) {
  */
 function getScreenMediaAndAddTrack() {
     navigator.mediaDevices.getDisplayMedia().then(stream => {
-        localScreen = stream;
         // 设置本地流
         client.setLocalScreenStream(stream)
         // 将视频流发送到所有远端屏幕上

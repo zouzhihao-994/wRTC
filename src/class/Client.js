@@ -11,8 +11,10 @@ class Client {
         this._roomId = roomId;
         this._socketUrl = url
 
+        // 当前房间的在线客户端信息 {K:peerName,V:peer}
         this._onlinePeer = {}
-
+        // 本地音视频流
+        this._localStream = null
         // 存储本地屏幕流
         this._localScreenStream = null
         // 用于存储视频流的对端,K:peerName. V:peer pc
@@ -24,6 +26,14 @@ class Client {
     }
 
 
+    get localStream() {
+        return this._localStream;
+    }
+
+    setLocalStream(stream) {
+        this._localStream = stream;
+    }
+
     getOnlinePeer(peerName) {
         return this._onlinePeer[peerName];
     }
@@ -32,7 +42,7 @@ class Client {
         return this._onlinePeer;
     }
 
-    addOnlinePeer(peerName,peer) {
+    addOnlinePeer(peerName, peer) {
         this._onlinePeer[peerName] = peer;
     }
 
