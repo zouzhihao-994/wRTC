@@ -48,7 +48,7 @@ class Socket {
      * @param participants 该房间的所有客户端信息
      * @param account 发送joined消息的客户端account
      */
-    onJoined(participants, account) {
+    hidden_onJoined(participants, account) {
         // 只有一个人说明room只有本客户端一个端，不做任何处理
         if (participants.length === 1) {
             return
@@ -96,6 +96,23 @@ class Socket {
             for (let p in this._client.remoteScreen) {
                 console.log("send screen offer to", this._client.remoteScreen[p])
                 createOffer(p, this._client.remoteScreen[p], this._client, this);
+            }
+        }
+    }
+
+    /**
+     * 收到join请求时，将room中所有人的account保存
+     */
+    onJoined(participants) {
+        if (participants.length === 1) {
+            return;
+        }
+
+        // 添加在线peer信息
+        for (let idx in participants) {
+            if (!this._client._onlinePeer.hasOwnProperty(participants[idx].account)) {
+                this._client.addOnlinePeer(participants[idx].account, participants[idx])
+                console.log("添加新的peer：", this._client.getOnlinePeer(participants[idx].account))
             }
         }
 
@@ -206,6 +223,21 @@ class Socket {
     }
 
     /**
+     * @param account 对端的account
+     * @param screenStream 屏幕流
+     */
+    onScreenTrack(account, screenStream) {
+        //let screenTrack = screenStream.getTracks()[0]
+        //todo screenTrack.onmute = ;
+        try {
+            this.onRemoteScreenStream({account: account, stream: screenStream})
+        } catch (e) {
+            console.error('[Caller error] onRemoteScreenStream', e)
+        }
+    }
+
+
+    /**
      * 设置监听peerAddStream
      * 如果存在对应的video组件，将stream输出到该video上
      * 如果没有，新建一个video，然后将stream输出到video上
@@ -287,6 +319,18 @@ class Socket {
             roomId: roomId,
             peerName: peerName
         })
+    }
+
+    /**
+     * 本客户端发送screenShare事件
+     */
+    emitScreenShare(){
+        console.log(">>> socket emit screen share msg to room ",this._client.roomId)
+        this._socketServer.emit('screenShare',{
+            account:this._client.account,
+            roomId:this._client.roomId
+        })
+
     }
 
     /**
