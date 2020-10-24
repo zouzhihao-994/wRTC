@@ -2,6 +2,7 @@
 
 import {Client} from "./class/Client";
 import {Socket} from "./class/Socket";
+import {getScreenMedia} from "./class/RtcPeer"
 
 const screenSuffix = '@ScreenShare';
 const iceServer = {
@@ -51,31 +52,17 @@ function joinHandler() {
     socket.emitJoin();
 }
 
+/**
+ * 如果本地已经存在
+ * @returns {getScreenMedia}
+ */
 function shareHandler() {
-    // 如果存在本地视频流
-    if (localStream) {
-        console.log("检测到本地存在视频流")
+    // 如果存在本地screen
+    if (localScreen) {
+        console.log("检测到本地存在screen流")
     } else {
-        return navigator.mediaDevices.getDisplayMedia().then(stream => {
-            localStream = stream;
-            // 设置本地流
-            client.setLocalScreenStream(stream)
-            // 将视频流发送到所有远端屏幕上
-            for (let peerName in client.remoteScreen) {
-                try {
-                    client.localScreenStream.getTracks().forEach(track => {
-                        // 设置监听onended事件
-                        track.onended = socket.onEnded
-
-                        // 添加远端
-                        client.remoteScreen[peerName].addTrack(track, client.localScreenStream)
-                    })
-                } catch (e) {
-                    console.error('share getDisplayMedia addTrack error', e);
-                }
-            }
-            return Promise.resolve(stream)
-        })
+        // 获取桌面内容
+        getScreenMedia()
     }
 }
 
@@ -90,5 +77,5 @@ function getRawPeerName(str, account) {
     return names[0] === account ? names[1] : names[0];
 }
 
-export {div, screenSuffix, iceServer, localStream, localScreen, screenDiv, getRawPeerName}
+export {client,socket,div, screenSuffix, iceServer, localStream, localScreen, screenDiv, getRawPeerName}
 

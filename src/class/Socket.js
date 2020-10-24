@@ -46,6 +46,10 @@ class Socket {
      * @param account 发送joined消息的客户端account
      */
     onJoined(participants, account) {
+        // 只有一个人说明room只有本客户端一个端，不做任何处理
+        if (participants.length === 1) {
+            return
+        }
 
         // 信令服务器返回的data是所有加入该房间的客户端信息
         let accountIdArr = []
@@ -56,42 +60,42 @@ class Socket {
         }
         console.log("room ", this._client.roomId, "的参与者id: ", accounts)
 
-        if (participants.length > 1) {
-            participants.forEach(p => {
-                if (p.account !== this._client.account) {
-                    console.log("peer:", p)
-                    let peer = {}
-                    let arr = [p.account, this._client.account];
-                    peer.peerName = arr.sort().join('-');
-                    peer.remoteScreenName = peer.peerName + screenSuffix
-                    console.log("peerName:", peer.peerName, "peerScreenName:", peer.remoteScreenName)
+        participants.forEach(p => {
+            if (p.account !== this._client.account) {
+                // 保存两端连接的名称
+                console.log("peer:", p)
+                let peer = {}
+                let arr = [p.account, this._client.account];
+                peer.peerName = arr.sort().join('-');
+                peer.remoteScreenName = peer.peerName + screenSuffix
+                console.log("peerName:", peer.peerName, "peerScreenName:", peer.remoteScreenName)
 
-                    if (!this._client.existPeer(peer.peerName)) {
-                        // 创建一个pc，负责连接本端与对端的音视频
-                        createPeerConnection(peer, this._client, this);
-                    }
-
-                    if (!this._client.existRemoteScreen(peer.remoteScreenName)) {
-                        // 创建一个pc，负责连接本端与对端的屏幕共享
-                        createScreenConnection(peer, this._client, this);
-                    }
+                // 创建一个pc，负责连接本端与对端的音视频
+                if (!this._client.existPeer(peer.peerName)) {
+                    createPeerConnection(peer, this._client, this);
                 }
-            })
 
-            // 如果account是本client，给其他所有peer发送offer sdp
-            if (account === this._client.account) {
-                // p = peerName , peer[p] = peer
-                for (let p in this._client.peer) {
-                    console.log("send connect offer to", this._client.peer[p])
-                    createOffer(p, this._client.peer[p], this._client, this);
-                }
-                // 创建共享桌面连接的offer
-                for (let p in this._client.remoteScreen) {
-                    console.log("send screen offer to", this._client.remoteScreen[p])
-                    createOffer(p, this._client.remoteScreen[p], this._client, this);
+                // 创建一个pc，负责连接本端与对端的屏幕共享
+                if (!this._client.existRemoteScreen(peer.remoteScreenName)) {
+                    createScreenConnection(peer, this._client, this);
                 }
             }
+        })
+
+        // 如果account是本client，给其他所有peer发送offer sdp
+        if (account === this._client.account) {
+            // p = peerName , peer[p] = peer
+            for (let p in this._client.peer) {
+                console.log("send connect offer to", this._client.peer[p])
+                createOffer(p, this._client.peer[p], this._client, this);
+            }
+            // 创建共享桌面连接的offer
+            for (let p in this._client.remoteScreen) {
+                console.log("send screen offer to", this._client.remoteScreen[p])
+                createOffer(p, this._client.remoteScreen[p], this._client, this);
+            }
         }
+
     }
 
     /**

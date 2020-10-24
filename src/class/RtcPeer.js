@@ -1,6 +1,6 @@
 'use strict';
 
-import {getRawPeerName, iceServer, screenSuffix} from "../index";
+import {client, socket, getRawPeerName, iceServer, screenSuffix, localScreen} from "../index";
 
 /**
  * 创建OFFER
@@ -80,14 +80,12 @@ function createPeerConnection(p, client, socketServer) {
     let pc = new RTCPeerConnection(iceServer);
     console.log("create peer connection ", pc)
 
-    // 如果检测到对方媒体流连接，将其绑定到一个video标签上输出
     pc.ontrack = (event) => {
         if (event.streams) {
             socketServer.onTrack(p.peerName, event.streams[0])
         }
     }
 
-    // 发送icecandidate信息时给p
     pc.onicecandidate = (event) => {
         console.log("接收到icecandidate", pc)
         if (event.candidate) {
@@ -95,7 +93,6 @@ function createPeerConnection(p, client, socketServer) {
         }
     }
 
-    // 当发生协议变更时
     pc.onnegotiationneeded = () => {
         createOffer(p.peerName, pc, client, socketServer)
     }
@@ -105,4 +102,30 @@ function createPeerConnection(p, client, socketServer) {
     console.log("getPeerConnection ok")
 }
 
-export {createOffer, createScreenConnection, createPeerConnection}
+/**
+ * 获取本地屏幕的图像
+ */
+function getScreenMedia() {
+    navigator.mediaDevices.getDisplayMedia().then(stream => {
+        localScreen = stream;
+        // 设置本地流
+        client.setLocalScreenStream(stream)
+        // 将视频流发送到所有远端屏幕上
+        for (let peerName in client.remoteScreen) {
+            try {
+                client.localScreenStream.getTracks().forEach(track => {
+                    // 设置监听onended事件
+                    track.onended = socket.onEnded
+                    // 添加远端
+                    client.remoteScreen[peerName].addTrack(track, client.localScreenStream)
+                })
+            } catch (e) {
+                console.error('share getDisplayMedia addTrack error', e);
+            }
+        }
+        return Promise.resolve(stream)
+    })
+
+}
+
+export {createOffer, createScreenConnection, createPeerConnection, getScreenMedia}
