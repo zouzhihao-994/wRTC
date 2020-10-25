@@ -16,7 +16,7 @@ class Client {
 
         // ---------------remote av--------------------
         // 本地音视频流
-        this._localStream = null
+        this._localAvStream = null
         // 用于存储视频流的对端,K:peerName. V:peer pc
         this._remoteAvPC = {}
         this._remoteAvStream = {}
@@ -31,12 +31,12 @@ class Client {
     }
 
 
-    get localStream() {
-        return this._localStream;
+    get localAvStream() {
+        return this._localAvStream;
     }
 
-    setLocalStream(stream) {
-        this._localStream = stream;
+    setLocalAvStream(stream) {
+        this._localAvStream = stream;
     }
 
     getOnlinePeer(peerName) {

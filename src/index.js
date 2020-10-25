@@ -70,7 +70,7 @@ function joinHandler() {
  * 音视频分享
  */
 function avShareHandler() {
-    if (client.localStream) {
+    if (client.localAvStream) {
         console.log("本地已经存在音视频流，无法再创建")
         return;
     }
@@ -104,11 +104,11 @@ function avShareHandler() {
             client.addPeer(peerName, pc)
             // 输出track
             try {
-                client.localStream.getTracks().forEach(track => {
+                client.localAvStream.getTracks().forEach(track => {
                     // 设置监听onended事件
                     track.onended = socket.onEnded
                     // 添加远端
-                    pc.addTrack(track, client.localStream)
+                    pc.addTrack(track, client.localAvStream)
                 })
             } catch (e) {
                 console.error('share getDisplayMedia addTrack error', e);
@@ -184,7 +184,7 @@ function shareHandler() {
 
 function gotScreenStream(stream) {
     client.setLocalScreenStream(stream)
-    if(client.localStream !== null){
+    if(client.localAvStream !== null){
         createVideoOutputStream({peerName: client.account, stream: stream})
         return
     }
@@ -192,7 +192,7 @@ function gotScreenStream(stream) {
 }
 
 function gotAvStream(stream) {
-    client.setLocalStream(stream)
+    client.setLocalAvStream(stream)
     //如果已经存在屏幕流，则先创建一个音视频流
     if(client.localScreenStream !== null){
         createVideoOutputStream({peerName: client.account, stream: stream})
