@@ -2,7 +2,7 @@
 
 import {Client} from "./class/Client";
 import {Socket} from "./class/Socket";
-import {createOffer} from "./class/RtcPeer";
+import {createOffer, createPCAndAddTrack} from "./class/RtcPeer";
 
 const SCREEN_SHARE = "screen_share"
 const AV_SHARE = "av_share"
@@ -82,39 +82,8 @@ function avShareHandler() {
             if (peerName === client.account) {
                 continue
             }
-            // 创建pc
-            let pc = new RTCPeerConnection(iceServer)
-            // 设置track监听
-            pc.ontrack = (event) => {
-                if (event.streams) {
-                    socket.onScreenTrack(peerName, event.streams[0])
-                }
-            }
-            // 设置ice监听
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    socket.emitIceCandidate(event.candidate, client.roomId, peerName, AV_SHARE)
-                }
-            }
-            // 设置negotiation监听
-            pc.onnegotiationneeded = () => {
-                createOffer(peerName, pc, client, socket, AV_SHARE)
-            }
-            // 保存{peerName:pc}
-            client.addPeer(peerName, pc)
-            // 输出track
-            try {
-                client.localAvStream.getTracks().forEach(track => {
-                    // 设置监听onended事件
-                    track.onended = socket.onEnded
-                    // 添加远端
-                    pc.addTrack(track, client.localAvStream)
-                })
-            } catch (e) {
-                console.error('share getDisplayMedia addTrack error', e);
-            }
+            createPCAndAddTrack(peerName, stream, AV_SHARE)
         }
-
         // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
         socket.emitAvShare()
 
@@ -184,7 +153,7 @@ function shareHandler() {
 
 function gotScreenStream(stream) {
     client.setLocalScreenStream(stream)
-    if(client.localAvStream !== null){
+    if (client.localAvStream !== null) {
         createVideoOutputStream({peerName: client.account, stream: stream})
         return
     }
@@ -194,7 +163,7 @@ function gotScreenStream(stream) {
 function gotAvStream(stream) {
     client.setLocalAvStream(stream)
     //如果已经存在屏幕流，则先创建一个音视频流
-    if(client.localScreenStream !== null){
+    if (client.localScreenStream !== null) {
         createVideoOutputStream({peerName: client.account, stream: stream})
         return
     }

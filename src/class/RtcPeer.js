@@ -1,6 +1,6 @@
 'use strict';
 
-import {client, socket, SCREEN_SHARE, AV_SHARE} from "../index";
+import {client, socket, SCREEN_SHARE, AV_SHARE, iceServer} from "../index";
 
 /**
  * 创建OFFER
@@ -11,7 +11,7 @@ import {client, socket, SCREEN_SHARE, AV_SHARE} from "../index";
  * @param socketServer SocketServer类
  * @param mediaType 视频类型，音视频{@link AV_SHARE} or 屏幕共享{@link SCREEN_SHARE}
  */
-function createOffer(account, pc, client, socketServer,mediaType) {
+function createOffer(account, pc, client, socketServer, mediaType) {
     console.log(">>> send offer to", account)
     pc.createOffer({
         // offerToReceiveAudio:1,
@@ -27,30 +27,45 @@ function createOffer(account, pc, client, socketServer,mediaType) {
     })
 }
 
-
 /**
- * 获取本地屏幕的图像
- * 然后添加screen stream track到所有对端pc中
+ * 和对端进行建立连接，然后输出本端的stream给对端
+ * 具体的流程为：1.创建pc -> 2.connection设置track监听 -> 3.设置ice监听 -> 4.设置onnegotiationneeded监听 -> 5.输出本端的流到pc中
+ * @param account 对端的account
+ * @param stream 要输出的流
+ * @param mediaType 视频的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
  */
-function getScreenMediaAndAddTrack() {
-    navigator.mediaDevices.getDisplayMedia().then(stream => {
-        // 设置本地流
-        client.setLocalScreenStream(stream)
-        // 将视频流发送到所有远端屏幕上
-        for (let peerName in client.remoteScreen) {
-            try {
-                client.localScreenStream.getTracks().forEach(track => {
-                    // 设置监听onended事件
-                    track.onended = socket.onEnded
-                    // 添加远端
-                    client.remoteScreen[peerName].addTrack(track, client.localScreenStream)
-                })
-            } catch (e) {
-                console.error('share getDisplayMedia addTrack error', e);
-            }
+function createPCAndAddTrack(account, stream, mediaType) {
+    // 创建pc
+    let pc = new RTCPeerConnection(iceServer)
+    // 设置track监听
+    pc.ontrack = (event) => {
+        if (event.streams) {
+            socket.onScreenTrack(account, event.streams[0])
         }
-        return Promise.resolve(stream)
-    })
+    }
+    // 设置ice监听
+    pc.onicecandidate = (event) => {
+        if (event.candidate) {
+            socket.emitIceCandidate(event.candidate, client.roomId, account, mediaType)
+        }
+    }
+    // 设置negotiation监听
+    pc.onnegotiationneeded = () => {
+        createOffer(account, pc, client, socket, mediaType)
+    }
+    // 保存{peerName:pc}
+    client.addPeer(account, pc)
+    // 输出track
+    try {
+        stream.getTracks().forEach(track => {
+            // 设置监听onended事件
+            track.onended = socket.onEnded
+            // 添加远端
+            pc.addTrack(track, client.localAvStream)
+        })
+    } catch (e) {
+        console.error('share getDisplayMedia addTrack error', e);
+    }
 }
 
-export {createOffer, getScreenMediaAndAddTrack}
+export {createOffer,createPCAndAddTrack}
