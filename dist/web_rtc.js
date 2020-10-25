@@ -131,6 +131,7 @@ const iceServer = {
 
     // 绑定元素
 };let joinButton = document.getElementById("joinBtn");
+let avButton = document.getElementById("avBtn");
 let shareButton = document.getElementById("shareBtn");
 let accountInputValue = document.getElementById('account');
 let roomInputValue = document.getElementById('room');
@@ -152,6 +153,7 @@ let socketUrl = local_env;
 // 绑定事件
 joinButton.addEventListener('click', joinHandler);
 shareButton.addEventListener('click', shareHandler);
+avButton.addEventListener('click', avShareHandler);
 
 /**
  * join事件
@@ -160,6 +162,10 @@ shareButton.addEventListener('click', shareHandler);
  * socket {@class Socket}
  */
 function joinHandler() {
+    joinButton.display = true;
+    shareButton.display = false;
+    avButton.display = false;
+
     // 创建客户端
     client = new _class_Client__WEBPACK_IMPORTED_MODULE_0__["Client"](accountInputValue.value, roomInputValue.value, socketUrl);
     client.toString();
@@ -173,78 +179,131 @@ function joinHandler() {
 }
 
 /**
- * 分享事件
- * 如果本地存在screen stream，使用该流，否则新建一个screen stream
+ * 音视频分享
  */
-// function shareHandler() {
-//     // 如果存在本地screen
-//     if (localScreen) {
-//         console.log("检测到本地存在screen流")
-//     } else {
-//         // 获取桌面内容
-//         getScreenMediaAndAddTrack()
-//     }
-// }
+function avShareHandler() {
+    avButton.display = true;
+    if (client.localStream) {
+        console.log("本地已经存在音视频流，无法再创建");
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: false, video: true }).then(stream => {
+        gotAvStream(stream);
+        // 设置pc
+        for (let peerName in client.onlinePeer) {
+            if (peerName === client.account) {
+                continue;
+            }
+            // 创建pc
+            let pc = new RTCPeerConnection(iceServer);
+            // 设置track监听
+            pc.ontrack = event => {
+                if (event.streams) {
+                    socket.onScreenTrack(peerName, event.streams[0]);
+                }
+            };
+            // 设置ice监听
+            pc.onicecandidate = event => {
+                if (event.candidate) {
+                    socket.emitIceCandidate(event.candidate, client.roomId, peerName, AV_SHARE);
+                }
+            };
+            // 设置negotiation监听
+            pc.onnegotiationneeded = () => {
+                Object(_class_RtcPeer__WEBPACK_IMPORTED_MODULE_2__["createOffer"])(peerName, pc, client, socket, AV_SHARE);
+            };
+            // 保存{peerName:pc}
+            client.addPeer(peerName, pc);
+            // 输出track
+            try {
+                client.localStream.getTracks().forEach(track => {
+                    // 设置监听onended事件
+                    track.onended = socket.onEnded;
+                    // 添加远端
+                    pc.addTrack(track, client.localStream);
+                });
+            } catch (e) {
+                console.error('share getDisplayMedia addTrack error', e);
+            }
+        }
+
+        // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
+        socket.emitAvShare();
+    }).catch(e => {
+        console.error('av share getDisplayMedia addTrack error', e);
+    });
+}
 
 /**
  * 进行桌面共享
  */
 function shareHandler() {
     if (client.localScreenStream) {
-        console.log("检测到本地存在screen流");
-    } else {
-        // 新建screen流
-        // 获取桌面,同时设置本地stream和video为stream
-        navigator.mediaDevices.getDisplayMedia().then(stream => {
-            // 设置流
-            gotStream(stream);
-            // 设置pc
-            for (let peerName in client.onlinePeer) {
-                if (peerName === client.account) {
-                    continue;
-                }
-                // 创建pc
-                let pc = new RTCPeerConnection(iceServer);
-                // 设置track监听
-                pc.ontrack = event => {
-                    if (event.streams) {
-                        socket.onScreenTrack(peerName, event.streams[0]);
-                    }
-                };
-                // 设置ice监听
-                pc.onicecandidate = event => {
-                    if (event.candidate) {
-                        socket.emitIceCandidate(event.candidate, client.roomId, peerName, SCREEN_SHARE);
-                    }
-                };
-                // 设置negotiation监听
-                pc.onnegotiationneeded = () => {
-                    Object(_class_RtcPeer__WEBPACK_IMPORTED_MODULE_2__["createOffer"])(peerName, pc, client, socket, SCREEN_SHARE);
-                };
-                // 保存{peerName:pc}
-                client.addRemoteScreen(peerName, pc);
-                // 输出track
-                try {
-                    client.localScreenStream.getTracks().forEach(track => {
-                        // 设置监听onended事件
-                        track.onended = socket.onEnded;
-                        // 添加远端
-                        pc.addTrack(track, client.localScreenStream);
-                    });
-                } catch (e) {
-                    console.error('share getDisplayMedia addTrack error', e);
-                }
-            }
-
-            // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给该房间所有人
-            socket.emitScreenShare();
-        }).catch(e => console.log('getUserMedia() error: ', e));
+        console.log("检测到本地存在screen流,无法再创建");
+        return;
     }
+
+    // 新建screen流
+    // 获取桌面,同时设置本地stream和video为stream
+    navigator.mediaDevices.getDisplayMedia().then(stream => {
+        // 设置流
+        gotScreenStream(stream);
+
+        // 设置pc
+        for (let peerName in client.onlinePeer) {
+            if (peerName === client.account) {
+                continue;
+            }
+            // 创建pc
+            let pc = new RTCPeerConnection(iceServer);
+            // 设置track监听
+            pc.ontrack = event => {
+                if (event.streams) {
+                    socket.onScreenTrack(peerName, event.streams[0]);
+                }
+            };
+            // 设置ice监听
+            pc.onicecandidate = event => {
+                if (event.candidate) {
+                    socket.emitIceCandidate(event.candidate, client.roomId, peerName, SCREEN_SHARE);
+                }
+            };
+            // 设置negotiation监听
+            pc.onnegotiationneeded = () => {
+                Object(_class_RtcPeer__WEBPACK_IMPORTED_MODULE_2__["createOffer"])(peerName, pc, client, socket, SCREEN_SHARE);
+            };
+            // 保存{peerName:pc}
+            client.addRemoteScreen(peerName, pc);
+            // 输出track
+            try {
+                client.localScreenStream.getTracks().forEach(track => {
+                    // 设置监听onended事件
+                    track.onended = socket.onEnded;
+                    // 添加远端
+                    pc.addTrack(track, client.localScreenStream);
+                });
+            } catch (e) {
+                console.error('share getDisplayMedia addTrack error', e);
+            }
+        }
+
+        // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
+        socket.emitScreenShare();
+    }).catch(e => console.log('getUserMedia() error: ', e));
 }
 
-function gotStream(stream) {
+function gotScreenStream(stream) {
     client.setLocalScreenStream(stream);
     localVideo.srcObject = stream;
+    shareButton.display = true;
+    avButton.display = true;
+}
+
+function gotAvStream(stream) {
+    client.setLocalStream(stream);
+    localVideo.srcObject = stream;
+    avButton.display = true;
     shareButton.display = true;
 }
 
@@ -284,16 +343,21 @@ class Client {
 
         // 当前房间的在线客户端信息 {K:peerName,V:peer}
         this._onlinePeer = {};
+
+        // ---------------remote av--------------------
         // 本地音视频流
         this._localStream = null;
+        // 用于存储视频流的对端,K:peerName. V:peer pc
+        this._remoteAvPC = {};
+        this._remoteAvStream = {};
+
+        // ---------------remote screen--------------------
         // 存储本地屏幕流
         this._localScreenStream = null;
-        // 用于存储视频流的对端,K:peerName. V:peer pc
-        this._peer = {};
         // 用于存储屏幕共享的对端，K:peerName,V:peer pc
-        this._remoteScreen = {};
+        this._remoteScreenPC = {};
         // 用于存储对端的stream, K:peerName. V:peer stream
-        this._peerStream = {};
+        this._remoteScreenStream = {};
     }
 
     get localStream() {
@@ -321,23 +385,23 @@ class Client {
     }
 
     addRemoteScreen(remoteScreenName, peer) {
-        this._remoteScreen[remoteScreenName] = peer;
+        this._remoteScreenPC[remoteScreenName] = peer;
     }
 
     existRemoteScreen(remoteScreenName) {
-        return this._remoteScreen[remoteScreenName];
+        return this._remoteScreenPC[remoteScreenName];
     }
 
     addPeerStream(account, stream) {
-        this._peerStream[account] = stream;
+        this._remoteScreenStream[account] = stream;
     }
 
     existPeer(peerName) {
-        return this._peer[peerName];
+        return this._remoteAvPC[peerName];
     }
 
-    addPeer(peerName, peer) {
-        this._peer[peerName] = peer;
+    addPeer(peerName, pc) {
+        this._remoteAvPC[peerName] = pc;
     }
 
     get localScreenStream() {
@@ -345,11 +409,11 @@ class Client {
     }
 
     get remoteScreen() {
-        return this._remoteScreen;
+        return this._remoteScreenPC;
     }
 
     get peer() {
-        return this._peer;
+        return this._remoteAvPC;
     }
 
     get account() {
@@ -420,8 +484,13 @@ class Socket {
         this._socketServer.on("ice_candidate", data => {
             this.onIceCandidate(data);
         });
+        // 监听屏幕共享消息
         this._socketServer.on("screenShared", account => {
             this.onScreenShared(account);
+        });
+        // 监听音视频共享消息
+        this._socketServer.on("avShared", account => {
+            this.onAvShared(account);
         });
     }
 
@@ -532,6 +601,36 @@ class Socket {
     }
 
     /**
+     * 监听av shared消息
+     * @param account
+     */
+    onAvShared(account) {
+        if (account === this._client.account) {
+            return;
+        }
+        console.log(">>> 音视频共享请求");
+
+        let pc = new RTCPeerConnection(_index__WEBPACK_IMPORTED_MODULE_1__["iceServer"]);
+        pc.ontrack = event => {
+            if (event.streams) {
+                this.onScreenTrack(account, event.streams[0]);
+            }
+        };
+        // 设置ice监听
+        pc.onicecandidate = event => {
+            if (event.candidate) {
+                this.emitIceCandidate(event.candidate, this._client.roomId, account, _index__WEBPACK_IMPORTED_MODULE_1__["AV_SHARE"]);
+            }
+        };
+        // 设置negotiation监听
+        pc.onnegotiationneeded = () => {
+            Object(_RtcPeer__WEBPACK_IMPORTED_MODULE_2__["createOffer"])(account, pc, client, this, _index__WEBPACK_IMPORTED_MODULE_1__["AV_SHARE"]);
+        };
+        // 保存{peerName:pc}
+        this._client.addPeer(account, pc);
+    }
+
+    /**
      * 监听offer消息
      * @param data 包含四个字段，
      */
@@ -544,13 +643,6 @@ class Socket {
         if (data.mediaType === _index__WEBPACK_IMPORTED_MODULE_1__["SCREEN_SHARE"]) {
             // data.source 是发送方的account,发送方也就是本端的对端
             this._client.remoteScreen[data.source] && this._client.remoteScreen[data.source].setRemoteDescription(data.sdp, () => {
-                try {
-                    this._client.localScreenStream && this._client.localScreenStream.getTracks().forEach(track => {
-                        this._client.remoteScreen[data.source].addTrack(track, this._client.localScreenStream);
-                    });
-                } catch (e) {
-                    console.error('take_offer event screen addTrack error', e);
-                }
                 this._client.remoteScreen[data.source].createAnswer().then(desc => {
                     this._client.remoteScreen[data.source].setLocalDescription(desc, () => {
                         this.emitAnswer(data.source, this._client.roomId, this._client.remoteScreen[data.source].localDescription, _index__WEBPACK_IMPORTED_MODULE_1__["SCREEN_SHARE"]);
@@ -562,19 +654,7 @@ class Socket {
         } else {
             //音视频形式
             this._client.peer[data.source] && this._client.peer[data.source].setRemoteDescription(data.sdp, () => {
-                try {
-                    // 如果本地存在视频流，将视频流添加到对方pc中
-                    if (this._client.localScreenStream) {
-                        console.log("==添加本地stream到对方pc中==");
-                        this._client.localScreenStream.getTracks().forEach(track => {
-                            this._client.peer[data.source].addTrack(track, this._client.localStream);
-                        });
-                    }
-                } catch (e) {
-                    console.error('take_offer event localVideo addTrack error', e);
-                }
-                console.log("==准备发送emit==", this._client.peer[data.source]);
-                this._client.peer[data.source] && this._client.peer[data.source].createAnswer().then(desc => {
+                this._client.peer[data.source].createAnswer().then(desc => {
                     this._client.peer[data.source].setLocalDescription(desc, () => {
                         this.emitAnswer(data.source, this._client.roomId, this._client.peer[data.source].localDescription, _index__WEBPACK_IMPORTED_MODULE_1__["AV_SHARE"]);
                     });
@@ -645,9 +725,9 @@ class Socket {
     onScreenTrack(account, screenStream) {
         //let screenTrack = screenStream.getTracks()[0]
         //todo screenTrack.onmute = ;
-        console.log(">>> 收到", account, "screen track");
+        console.log(">>> 收到", account, "track");
         try {
-            this.onRemoteScreenStream({ account: account, stream: screenStream });
+            this.createVideoOutputStream({ account: account, stream: screenStream });
         } catch (e) {
             console.error('[Caller error] onRemoteScreenStream', e);
         }
@@ -705,7 +785,7 @@ class Socket {
      * 创建一个video
      * @param peer map类型,包含两个字段 peerName,stream
      */
-    onRemoteScreenStream(peer) {
+    createVideoOutputStream(peer) {
         let video = document.createElement("video");
         _index__WEBPACK_IMPORTED_MODULE_1__["screenDiv"].appendChild(video);
 
@@ -741,6 +821,17 @@ class Socket {
             'dest': peerName,
             'source': this._client.account,
             'mediaType': mediaType
+        });
+    }
+
+    /**
+     * 发送音视频(av share)共享消息
+     */
+    emitAvShare() {
+        console.log(">>> socket emit av share msg to room", this._client.roomId);
+        this._socketServer.emit('avShare', {
+            'account': this._client.account,
+            'roomId': this._client.roomId
         });
     }
 
@@ -10449,7 +10540,7 @@ function createScreenConnection(p, client, socketServer) {
             let screenTrack = screenStream.getTracks()[0];
             try {
                 let account = Object(_index__WEBPACK_IMPORTED_MODULE_0__["getRawPeerName"])(p.remoteScreenName.split(_index__WEBPACK_IMPORTED_MODULE_0__["screenSuffix"])[0], client.account);
-                socketServer.onRemoteScreenStream({ account: account, stream: screenStream });
+                socketServer.createVideoOutputStream({ account: account, stream: screenStream });
             } catch (e) {
                 console.error('[Caller error] onRemoteScreenStream', e);
             }

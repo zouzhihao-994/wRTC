@@ -46,7 +46,7 @@ function createScreenConnection(p, client, socketServer) {
             let screenTrack = screenStream.getTracks()[0]
             try {
                 let account = getRawPeerName(p.remoteScreenName.split(screenSuffix)[0], client.account)
-                socketServer.onRemoteScreenStream({account: account, stream: screenStream})
+                socketServer.createVideoOutputStream({account: account, stream: screenStream})
             } catch (e) {
                 console.error('[Caller error] onRemoteScreenStream', e)
             }

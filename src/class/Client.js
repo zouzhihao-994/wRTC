@@ -13,16 +13,21 @@ class Client {
 
         // 当前房间的在线客户端信息 {K:peerName,V:peer}
         this._onlinePeer = {}
+
+        // ---------------remote av--------------------
         // 本地音视频流
         this._localStream = null
+        // 用于存储视频流的对端,K:peerName. V:peer pc
+        this._remoteAvPC = {}
+        this._remoteAvStream = {}
+
+        // ---------------remote screen--------------------
         // 存储本地屏幕流
         this._localScreenStream = null
-        // 用于存储视频流的对端,K:peerName. V:peer pc
-        this._peer = {}
         // 用于存储屏幕共享的对端，K:peerName,V:peer pc
-        this._remoteScreen = {}
+        this._remoteScreenPC = {}
         // 用于存储对端的stream, K:peerName. V:peer stream
-        this._peerStream = {}
+        this._remoteScreenStream = {}
     }
 
 
@@ -51,23 +56,23 @@ class Client {
     }
 
     addRemoteScreen(remoteScreenName, peer) {
-        this._remoteScreen[remoteScreenName] = peer
+        this._remoteScreenPC[remoteScreenName] = peer
     }
 
     existRemoteScreen(remoteScreenName) {
-        return this._remoteScreen[remoteScreenName]
+        return this._remoteScreenPC[remoteScreenName]
     }
 
     addPeerStream(account, stream) {
-        this._peerStream[account] = stream;
+        this._remoteScreenStream[account] = stream;
     }
 
     existPeer(peerName) {
-        return this._peer[peerName]
+        return this._remoteAvPC[peerName]
     }
 
-    addPeer(peerName, peer) {
-        this._peer[peerName] = peer
+    addPeer(peerName, pc) {
+        this._remoteAvPC[peerName] = pc
     }
 
     get localScreenStream() {
@@ -75,11 +80,11 @@ class Client {
     }
 
     get remoteScreen() {
-        return this._remoteScreen;
+        return this._remoteScreenPC;
     }
 
     get peer() {
-        return this._peer;
+        return this._remoteAvPC;
     }
 
     get account() {

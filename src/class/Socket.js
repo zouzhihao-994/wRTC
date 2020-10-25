@@ -40,8 +40,13 @@ class Socket {
         this._socketServer.on("ice_candidate", (data) => {
             this.onIceCandidate(data)
         })
+        // 监听屏幕共享消息
         this._socketServer.on("screenShared", (account) => {
             this.onScreenShared(account)
+        })
+        // 监听音视频共享消息
+        this._socketServer.on("avShared", (account) => {
+            this.onAvShared(account)
         })
 
     }
@@ -155,11 +160,41 @@ class Socket {
     }
 
     /**
+     * 监听av shared消息
+     * @param account
+     */
+    onAvShared(account) {
+        if(account === this._client.account){
+            return;
+        }
+        console.log(">>> 音视频共享请求")
+
+        let pc = new RTCPeerConnection(iceServer)
+        pc.ontrack = (event) =>{
+            if(event.streams){
+                this.onScreenTrack(account,event.streams[0])
+            }
+        }
+        // 设置ice监听
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                this.emitIceCandidate(event.candidate, this._client.roomId, account, AV_SHARE)
+            }
+        }
+        // 设置negotiation监听
+        pc.onnegotiationneeded = () => {
+            createOffer(account, pc, client, this, AV_SHARE)
+        }
+        // 保存{peerName:pc}
+        this._client.addPeer(account, pc)
+    }
+
+    /**
      * 监听offer消息
      * @param data 包含四个字段，
      */
     onOffer(data) {
-        if(data.source === this._client.account){
+        if (data.source === this._client.account) {
             return;
         }
         // 屏幕共享的形式
@@ -167,17 +202,9 @@ class Socket {
         if (data.mediaType === SCREEN_SHARE) {
             // data.source 是发送方的account,发送方也就是本端的对端
             this._client.remoteScreen[data.source] && this._client.remoteScreen[data.source].setRemoteDescription(data.sdp, () => {
-                try {
-                    this._client.localScreenStream && this._client.localScreenStream.getTracks().forEach(track => {
-                        this._client.remoteScreen[data.source].addTrack(track, this._client.localScreenStream)
-                    })
-
-                } catch (e) {
-                    console.error('take_offer event screen addTrack error', e);
-                }
                 this._client.remoteScreen[data.source].createAnswer().then((desc) => {
                     this._client.remoteScreen[data.source].setLocalDescription(desc, () => {
-                        this.emitAnswer(data.source, this._client.roomId, this._client.remoteScreen[data.source].localDescription,SCREEN_SHARE)
+                        this.emitAnswer(data.source, this._client.roomId, this._client.remoteScreen[data.source].localDescription, SCREEN_SHARE)
                     })
                 })
             }, (err) => {
@@ -185,21 +212,9 @@ class Socket {
             })
         } else { //音视频形式
             this._client.peer[data.source] && this._client.peer[data.source].setRemoteDescription(data.sdp, () => {
-                try {
-                    // 如果本地存在视频流，将视频流添加到对方pc中
-                    if (this._client.localScreenStream) {
-                        console.log("==添加本地stream到对方pc中==")
-                        this._client.localScreenStream.getTracks().forEach(track => {
-                            this._client.peer[data.source].addTrack(track, this._client.localStream)
-                        })
-                    }
-                } catch (e) {
-                    console.error('take_offer event localVideo addTrack error', e);
-                }
-                console.log("==准备发送emit==", this._client.peer[data.source])
-                this._client.peer[data.source] && this._client.peer[data.source].createAnswer().then(desc => {
+                 this._client.peer[data.source].createAnswer().then(desc => {
                     this._client.peer[data.source].setLocalDescription(desc, () => {
-                        this.emitAnswer(data.source, this._client.roomId, this._client.peer[data.source].localDescription,AV_SHARE)
+                        this.emitAnswer(data.source, this._client.roomId, this._client.peer[data.source].localDescription, AV_SHARE)
                     })
                 })
             }, (err) => {
@@ -226,7 +241,7 @@ class Socket {
      * @param data
      */
     onAnswer(data) {
-        if(data.source === this._client.account){
+        if (data.source === this._client.account) {
             return;
         }
         console.log(">>> 收到 answer", data)
@@ -269,14 +284,13 @@ class Socket {
     onScreenTrack(account, screenStream) {
         //let screenTrack = screenStream.getTracks()[0]
         //todo screenTrack.onmute = ;
-        console.log(">>> 收到", account, "screen track")
+        console.log(">>> 收到", account, "track")
         try {
-            this.onRemoteScreenStream({account: account, stream: screenStream})
+            this.createVideoOutputStream({account: account, stream: screenStream})
         } catch (e) {
             console.error('[Caller error] onRemoteScreenStream', e)
         }
     }
-
 
     /**
      * 设置监听peerAddStream
@@ -307,7 +321,7 @@ class Socket {
      * @param data 对端的emitIceCandidate方法发送的请求内容 {@link emitIceCandidate}
      */
     onIceCandidate(data) {
-        if(data.source === this._client.account){
+        if (data.source === this._client.account) {
             return;
         }
         console.log(">>> 收到 ice candidate", data)
@@ -330,7 +344,7 @@ class Socket {
      * 创建一个video
      * @param peer map类型,包含两个字段 peerName,stream
      */
-    onRemoteScreenStream(peer) {
+    createVideoOutputStream(peer) {
         let video = document.createElement("video")
         screenDiv.appendChild(video)
 
@@ -367,6 +381,17 @@ class Socket {
             'dest': peerName,
             'source': this._client.account,
             'mediaType': mediaType
+        })
+    }
+
+    /**
+     * 发送音视频(av share)共享消息
+     */
+    emitAvShare() {
+        console.log(">>> socket emit av share msg to room", this._client.roomId)
+        this._socketServer.emit('avShare', {
+            'account': this._client.account,
+            'roomId': this._client.roomId,
         })
     }
 
