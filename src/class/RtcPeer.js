@@ -39,7 +39,7 @@ function createPCAndAddTrack(account, stream, mediaType) {
     // 保存account和pc的映射关系
     if (mediaType === AV_SHARE) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [保存]: 保存 AV PC , account: ", account)
-        client.addPeer(account, pc);
+        client.addRemoteAvPC(account, pc);
     } else {
         console.log(">>> ", new Date().toLocaleTimeString(), " [保存]: 保存 Screen PC , account: ", account)
         client.addRemoteScreenPC(account, pc)

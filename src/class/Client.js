@@ -63,7 +63,7 @@ class Client {
         this._remoteScreenStream[account] = stream;
     }
 
-    addPeer(peerName, pc) {
+    addRemoteAvPC(peerName, pc) {
         this._remoteAvPC[peerName] = pc
     }
 
@@ -75,7 +75,7 @@ class Client {
         return this._remoteScreenPC;
     }
 
-    get peer() {
+    get remoteAvPC() {
         return this._remoteAvPC;
     }
 

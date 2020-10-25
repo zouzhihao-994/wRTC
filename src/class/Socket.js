@@ -165,10 +165,10 @@ class Socket {
                 console.error("setRemoteDescription error:", err);
             })
         } else { //音视频形式
-            this._client.peer[data.source] && this._client.peer[data.source].setRemoteDescription(data.sdp, () => {
-                this._client.peer[data.source].createAnswer().then(desc => {
-                    this._client.peer[data.source].setLocalDescription(desc, () => {
-                        this.emitAnswer(data.source, this._client.roomId, this._client.peer[data.source].localDescription, AV_SHARE)
+            this._client.remoteAvPC[data.source] && this._client.remoteAvPC[data.source].setRemoteDescription(data.sdp, () => {
+                this._client.remoteAvPC[data.source].createAnswer().then(desc => {
+                    this._client.remoteAvPC[data.source].setLocalDescription(desc, () => {
+                        this.emitAnswer(data.source, this._client.roomId, this._client.remoteAvPC[data.source].localDescription, AV_SHARE)
                     })
                 })
             }, (err) => {
@@ -206,7 +206,7 @@ class Socket {
                 console.error('setRemoteDescription error:', err, data.source);
             })
         } else { // 音视频模式
-            this._client.peer[data.source] && this._client.peer[data.source].setRemoteDescription(data.sdp, function () {
+            this._client.remoteAvPC[data.source] && this._client.remoteAvPC[data.source].setRemoteDescription(data.sdp, function () {
             }, (err) => {
                 console.error('setRemoteDescription error:', err, data.source);
             })
@@ -249,7 +249,7 @@ class Socket {
             }
         } else {
             if (data.candidate) {
-                this._client.peer[data.source].addIceCandidate(data.candidate).catch((err) => {
+                this._client.remoteAvPC[data.source].addIceCandidate(data.candidate).catch((err) => {
                     console.error('addIceCandidate error:', err);
                 });
             }
