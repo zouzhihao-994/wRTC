@@ -3,16 +3,14 @@
 import io from 'socket.io-client';
 import {
     div,
-    screenSuffix,
     getRawPeerName,
-    screenDiv,
     iceServer,
     SCREEN_SHARE,
     AV_SHARE,
     createVideoOutputStream,
     client, socket
 } from "../index";
-import {createOffer, createScreenConnection, createPeerConnection, createPCAndAddTracker} from "./RtcPeer";
+import {createOffer, createPCAndAddTracker} from "./RtcPeer";
 
 /**
  * 提供与socket操作相关的接口。
@@ -59,63 +57,6 @@ class Socket {
             this.onAvShared(account)
         })
 
-    }
-
-    /**
-     * 监听joined消息
-     * @param participants 该房间的所有客户端信息
-     * @param account 发送joined消息的客户端account
-     */
-    hidden_onJoined(participants, account) {
-        // 只有一个人说明room只有本客户端一个端，不做任何处理
-        if (participants.length === 1) {
-            return
-        }
-
-        // 信令服务器返回的data是所有加入该房间的客户端信息
-        let accountIdArr = []
-        let accounts = ""
-        for (let part in participants) {
-            accountIdArr[part] = participants[part].account
-            accounts = accounts + "," + accountIdArr[part]
-        }
-        console.log("room ", this._client.roomId, "的参与者id: ", accounts)
-
-        participants.forEach(p => {
-            if (p.account !== this._client.account) {
-                // 保存两端连接的名称
-                console.log("peer:", p)
-                let peer = {}
-                let arr = [p.account, this._client.account];
-                peer.peerName = arr.sort().join('-');
-                peer.remoteScreenName = peer.peerName + screenSuffix
-                console.log("peerName:", peer.peerName, "peerScreenName:", peer.remoteScreenName)
-
-                // 创建一个pc，负责连接本端与对端的音视频
-                if (!this._client.existPeer(peer.peerName)) {
-                    createPeerConnection(peer, this._client, this);
-                }
-
-                // 创建一个pc，负责连接本端与对端的屏幕共享
-                if (!this._client.existRemoteScreen(peer.remoteScreenName)) {
-                    createScreenConnection(peer, this._client, this);
-                }
-            }
-        })
-
-        // 如果account是本client，给其他所有peer发送offer sdp
-        if (account === this._client.account) {
-            // p = peerName , peer[p] = peer
-            for (let p in this._client.peer) {
-                console.log("send connect offer to", this._client.peer[p])
-                createOffer(p, this._client.peer[p], this._client, this, AV_SHARE);
-            }
-            // 创建共享桌面连接的offer
-            for (let p in this._client.remoteScreen) {
-                console.log("send screen offer to", this._client.remoteScreen[p])
-                createOffer(p, this._client.remoteScreen[p], this._client, this, SCREEN_SHARE);
-            }
-        }
     }
 
     /**
@@ -378,13 +319,25 @@ class Socket {
     }
 
     /**
-     * 发送音视频(av share)共享消息
+     * 发送音视频{@link AV_SHARE}消息给房间所有客户端
      */
     emitAvShare() {
         console.log(">>> socket emit av share msg to room", this._client.roomId)
         this._socketServer.emit('avShare', {
             'account': this._client.account,
             'roomId': this._client.roomId,
+        })
+    }
+
+    /**
+     * 发送音视频{@link AV_SHARE}消息给对端
+     * @param account 对端的account
+     */
+    emitAvShareToAccount(account) {
+        console.log(">>> socket emit av share msg to peer", account)
+        this._socketServer.emit('avShareToAccount', {
+            'source': this._client.account,
+            'dest': account
         })
     }
 
