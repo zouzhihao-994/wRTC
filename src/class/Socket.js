@@ -294,6 +294,14 @@ class Socket {
         })
     }
 
+    emitAvShareToAccount(dest) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: Av Share 消息到信令服务器 , dest:", dest)
+        this._socketServer.emit('avShareToAccount', {
+            'dest': dest,
+            'source': this._client.account
+        })
+    }
+
     /**
      * 本客户端发送screenShare事件
      */
