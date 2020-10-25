@@ -104,7 +104,7 @@ class Socket {
         // 设置ice监听
         pc.onicecandidate = (event) => {
             if (event.candidate) {
-                this.emitIceCandidate(event.candidate, this._client.roomId, account, SCREEN_SHARE)
+                this.emitIceCandidate(event.candidate, account, SCREEN_SHARE)
             }
         }
         // 设置negotiation监听
@@ -112,7 +112,7 @@ class Socket {
             createOffer(account, pc, client, this, SCREEN_SHARE)
         }
         // 保存{peerName:pc}
-        this._client.addRemoteScreen(account, pc)
+        this._client.addRemoteScreenPC(account, pc)
 
     }
 
@@ -135,7 +135,7 @@ class Socket {
         // 设置ice监听
         pc.onicecandidate = (event) => {
             if (event.candidate) {
-                this.emitIceCandidate(event.candidate, this._client.roomId, account, AV_SHARE)
+                this.emitIceCandidate(event.candidate, account, AV_SHARE)
             }
         }
         // 设置negotiation监听
@@ -186,7 +186,7 @@ class Socket {
     onEnded() {
         this._client.setLocalScreenStream(null)
         // 本地流设为null
-        this._client.setLocalScreenStream(null)
+        this._client.setLocalAvStream(null)
         // todo 移除远端流
 
         let state = {account: this._client.account, type: 'screenMute', value: false}
@@ -351,15 +351,14 @@ class Socket {
      * 发送ice candidate消息
      *
      * @param candidate 要发送的candidate消息内容
-     * @param roomId 房间id
      * @param account 对端的名称
      * @param mediaType 进行的视频类型 音视频类型{@link AV_SHARE} or 屏幕共享类型{@link SCREEN_SHARE}
      */
-    emitIceCandidate(candidate, roomId, account, mediaType) {
+    emitIceCandidate(candidate, account, mediaType) {
         console.log(">>> 发送 icecandidate to account ", account)
         this._socketServer.emit('ice_candidate', {
             'candidate': candidate,
-            'roomId': roomId,
+            'roomId': this._client.roomId,
             'dest': account,
             'source': this._client.account,
             'mediaType': mediaType

@@ -11,22 +11,22 @@ class Client {
         this._roomId = roomId;
         this._socketUrl = url
 
-        // 当前房间的在线客户端信息 {K:peerName,V:peer}
+        // 当前房间的在线客户端信息 {K:account,V:clientInfo}
         this._onlinePeer = {}
 
         // ---------------remote av--------------------
         // 本地音视频流
         this._localAvStream = null
-        // 用于存储视频流的对端,K:peerName. V:peer pc
+        // 用于存储视频流的对端,K:account. V:peer pc
         this._remoteAvPC = {}
         this._remoteAvStream = {}
 
         // ---------------remote screen--------------------
         // 存储本地屏幕流
         this._localScreenStream = null
-        // 用于存储屏幕共享的对端，K:peerName,V:peer pc
+        // 用于存储屏幕共享的对端，K:account,V:对端的pc
         this._remoteScreenPC = {}
-        // 用于存储对端的stream, K:peerName. V:peer stream
+        // 用于存储对端的stream, K:account. V:peer stream
         this._remoteScreenStream = {}
     }
 
@@ -55,7 +55,7 @@ class Client {
         this._localScreenStream = stream;
     }
 
-    addRemoteScreen(remoteScreenName, peer) {
+    addRemoteScreenPC(remoteScreenName, peer) {
         this._remoteScreenPC[remoteScreenName] = peer
     }
 

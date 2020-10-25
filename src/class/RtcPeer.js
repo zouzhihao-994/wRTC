@@ -37,6 +37,14 @@ function createOffer(account, pc, client, socketServer, mediaType) {
 function createPCAndAddTrack(account, stream, mediaType) {
     // 创建pc
     let pc = new RTCPeerConnection(iceServer)
+
+    // 保存account和pc的映射关系
+    if (mediaType === AV_SHARE) {
+        client.addPeer(account, pc);
+    } else {
+        client.addRemoteScreenPC(account, pc)
+    }
+
     // 设置track监听
     pc.ontrack = (event) => {
         if (event.streams) {
@@ -46,26 +54,24 @@ function createPCAndAddTrack(account, stream, mediaType) {
     // 设置ice监听
     pc.onicecandidate = (event) => {
         if (event.candidate) {
-            socket.emitIceCandidate(event.candidate, client.roomId, account, mediaType)
+            socket.emitIceCandidate(event.candidate, account, mediaType)
         }
     }
     // 设置negotiation监听
     pc.onnegotiationneeded = () => {
         createOffer(account, pc, client, socket, mediaType)
     }
-    // 保存{peerName:pc}
-    client.addPeer(account, pc)
     // 输出track
     try {
         stream.getTracks().forEach(track => {
             // 设置监听onended事件
             track.onended = socket.onEnded
             // 添加远端
-            pc.addTrack(track, client.localAvStream)
+            pc.addTrack(track, stream)
         })
     } catch (e) {
         console.error('share getDisplayMedia addTrack error', e);
     }
 }
 
-export {createOffer,createPCAndAddTrack}
+export {createOffer, createPCAndAddTrack}
