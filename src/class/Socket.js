@@ -3,7 +3,6 @@
 import io from 'socket.io-client';
 import {
     div,
-    getRawPeerName,
     iceServer,
     SCREEN_SHARE,
     AV_SHARE,
@@ -75,6 +74,13 @@ class Socket {
             this._client.addOnlinePeer(newcomer.account,newcomer)
             console.log("添加新的peer：", this._client.getOnlinePeer(newcomer.account))
         }
+
+        // 发送
+        if(this._client.localAvStream !== null){
+
+        }
+
+
     }
 
     /**
@@ -208,24 +214,6 @@ class Socket {
                 console.error('setRemoteDescription error:', err, data.source);
             })
         }
-    }
-
-    /**
-     * 监听track的消息
-     * @param peerName
-     * @param stream
-     */
-    onTrack(peerName, stream) {
-        console.log("检测到pc存在数据流")
-        let account = getRawPeerName(peerName, this._client.account)
-        try {
-            this.onPeerAddStream({account: account, stream: stream})
-        } catch (e) {
-            console.error("[Caller error] onPeerAddStream", e)
-        }
-
-        // 存储对方的流
-        this._client.addPeerStream(account, stream)
     }
 
     /**

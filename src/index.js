@@ -187,17 +187,6 @@ function createVideoOutputStream(peer) {
 
 }
 
-/**
- * 获取对端peer的account
- * @param str 完整的名称，例如"11-22",11为本端的account，22为对端的名称
- * @param account 本端的名称
- * @returns {*|string}
- */
-function getRawPeerName(str, account) {
-    let names = str.split('-');
-    return names[0] === account ? names[1] : names[0];
-}
-
 export {
     client,
     socket,
@@ -207,7 +196,6 @@ export {
     screenDiv,
     SCREEN_SHARE,
     AV_SHARE,
-    getRawPeerName,
     createVideoOutputStream
 }
 
