@@ -1,8 +1,18 @@
 'use strict';
 
 import io from 'socket.io-client';
-import {div, screenSuffix, getRawPeerName, screenDiv, iceServer, SCREEN_SHARE, AV_SHARE,createVideoOutputStream} from "../index";
-import {createOffer, createScreenConnection, createPeerConnection} from "./RtcPeer";
+import {
+    div,
+    screenSuffix,
+    getRawPeerName,
+    screenDiv,
+    iceServer,
+    SCREEN_SHARE,
+    AV_SHARE,
+    createVideoOutputStream,
+    client, socket
+} from "../index";
+import {createOffer, createScreenConnection, createPeerConnection, createPCAndAddTracker} from "./RtcPeer";
 
 /**
  * 提供与socket操作相关的接口。
@@ -110,15 +120,15 @@ class Socket {
 
     /**
      * 收到join请求时，将room中所有人的account保存
+     * @param participants 当前房间的所有客户端信息
+     * @param newcomer 发送join信息的客户端谢谢，即新加入者
+     *
      */
-    onJoined(participants) {
-        if (participants.length === 1) {
-            return;
-        }
-
-        // 添加在线peer信息
-        for (let idx in participants) {
-            if (!this._client._onlinePeer.hasOwnProperty(participants[idx].account)) {
+    onJoined(participants, newcomer) {
+        // 表示这是本client加入房间后第一次接收到join，所有保存room中的所有account
+        if (Object.keys(this._client.onlinePeer).length === 0) {
+            // 添加在线peer信息
+            for (let idx in participants) {
                 this._client.addOnlinePeer(participants[idx].account, participants[idx])
                 console.log("添加新的peer：", this._client.getOnlinePeer(participants[idx].account))
             }
@@ -164,15 +174,15 @@ class Socket {
      * @param account
      */
     onAvShared(account) {
-        if(account === this._client.account){
+        if (account === this._client.account) {
             return;
         }
         console.log(">>> 音视频共享请求")
 
         let pc = new RTCPeerConnection(iceServer)
-        pc.ontrack = (event) =>{
-            if(event.streams){
-                this.onScreenTrack(account,event.streams[0])
+        pc.ontrack = (event) => {
+            if (event.streams) {
+                this.onScreenTrack(account, event.streams[0])
             }
         }
         // 设置ice监听
@@ -212,7 +222,7 @@ class Socket {
             })
         } else { //音视频形式
             this._client.peer[data.source] && this._client.peer[data.source].setRemoteDescription(data.sdp, () => {
-                 this._client.peer[data.source].createAnswer().then(desc => {
+                this._client.peer[data.source].createAnswer().then(desc => {
                     this._client.peer[data.source].setLocalDescription(desc, () => {
                         this.emitAnswer(data.source, this._client.roomId, this._client.peer[data.source].localDescription, AV_SHARE)
                     })
@@ -354,7 +364,7 @@ class Socket {
      * @param peerName 对端peer name
      * @param localDescription 描述信息 {@link RTCPeerConnection#localDescription}
      * @param roomId 房间id
-     * @param mediaType 视频的类型 {@link #SCREEN_SHARE} or {@link }
+     * @param mediaType 视频的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
     emitOffer(peerName, localDescription, roomId, mediaType) {
         console.log("socket emit sdp offer")

@@ -11,7 +11,10 @@ class Client {
         this._roomId = roomId;
         this._socketUrl = url
 
-        // 当前房间的在线客户端信息 {K:peerName,V:peer}
+        /**
+         * 当前房间的在线客户端信息 {K:peerName,V:peer}
+         * @node 包含本客户端
+         */
         this._onlinePeer = {}
 
         // ---------------remote av--------------------
