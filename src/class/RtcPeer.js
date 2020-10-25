@@ -1,6 +1,6 @@
 'use strict';
 
-import {client, socket, getRawPeerName, iceServer, screenSuffix, SCREEN_SHARE, AV_SHARE} from "../index";
+import {client, socket, SCREEN_SHARE, AV_SHARE} from "../index";
 
 /**
  * 创建OFFER
@@ -27,81 +27,6 @@ function createOffer(account, pc, client, socketServer,mediaType) {
     })
 }
 
-/**
- * 创建屏幕共享连接对象pc，然后对pc添加监听器
- * @param p 对端peer {peerName,remoteScreen} {@link #Socket#onJoined peer变量}
- * @param client 客户端对象 {@class Client}
- * @param socketServer socket对象
- */
-function createScreenConnection(p, client, socketServer) {
-    let pc = new RTCPeerConnection(iceServer);
-
-    // 如果检测到对方媒体流连接，将其绑定到一个video上
-    pc.ontrack = (event) => {
-        console.log("接收 track", pc)
-        // 存在流
-        if (event.streams) {
-            console.log("存在stream", event)
-            let screenStream = event.streams[0];
-            let screenTrack = screenStream.getTracks()[0]
-            try {
-                let account = getRawPeerName(p.remoteScreenName.split(screenSuffix)[0], client.account)
-                socketServer.createVideoOutputStream({account: account, stream: screenStream})
-            } catch (e) {
-                console.error('[Caller error] onRemoteScreenStream', e)
-            }
-        }
-    }
-
-    // 发送ICE给其他客户端
-    pc.onicecandidate = (event) => {
-        if (event.candidate) {
-            socketServer.emitIceCandidate(event.candidate, client.roomId, p.remoteScreenName,SCREEN_SHARE)
-        }
-    }
-
-    // 设置监听
-    pc.onnegotiationneeded = () => {
-        createOffer(p.remoteScreenName, pc, client, socketServer,SCREEN_SHARE)
-    }
-
-    // 添加远端
-    client.addRemoteScreen(p.remoteScreenName, pc)
-
-}
-
-/**
- * 创建对端pc，然后设置回调函数
- * @param p map类型 {peerName,remoteScreen} {@link #Socket#onJoined peer变量}
- * @param client 本客户端 {@link Client}
- * @param socketServer socket服务类
- */
-function createPeerConnection(p, client, socketServer) {
-
-    let pc = new RTCPeerConnection(iceServer);
-    console.log("create peer connection ", pc)
-
-    pc.ontrack = (event) => {
-        if (event.streams) {
-            socketServer.onTrack(p.peerName, event.streams[0])
-        }
-    }
-
-    pc.onicecandidate = (event) => {
-        console.log("接收到icecandidate", pc)
-        if (event.candidate) {
-            socketServer.emitIceCandidate(event.candidate, client.roomId, p.peerName,AV_SHARE)
-        }
-    }
-
-    pc.onnegotiationneeded = () => {
-        createOffer(p.peerName, pc, client, socketServer,AV_SHARE)
-    }
-
-    // 保存对端名称
-    client.addPeer(p.peerName, pc)
-    console.log("getPeerConnection ok")
-}
 
 /**
  * 获取本地屏幕的图像
@@ -128,4 +53,4 @@ function getScreenMediaAndAddTrack() {
     })
 }
 
-export {createOffer, createScreenConnection, createPeerConnection, getScreenMediaAndAddTrack}
+export {createOffer, getScreenMediaAndAddTrack}

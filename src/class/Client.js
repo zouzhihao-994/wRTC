@@ -59,16 +59,8 @@ class Client {
         this._remoteScreenPC[remoteScreenName] = peer
     }
 
-    existRemoteScreen(remoteScreenName) {
-        return this._remoteScreenPC[remoteScreenName]
-    }
-
     addPeerStream(account, stream) {
         this._remoteScreenStream[account] = stream;
-    }
-
-    existPeer(peerName) {
-        return this._remoteAvPC[peerName]
     }
 
     addPeer(peerName, pc) {

@@ -3,15 +3,13 @@
 import io from 'socket.io-client';
 import {
     div,
-    screenSuffix,
     getRawPeerName,
-    screenDiv,
     iceServer,
     SCREEN_SHARE,
     AV_SHARE,
     createVideoOutputStream
 } from "../index";
-import {createOffer, createScreenConnection, createPeerConnection} from "./RtcPeer";
+import {createOffer} from "./RtcPeer";
 
 /**
  * 提供与socket操作相关的接口。
