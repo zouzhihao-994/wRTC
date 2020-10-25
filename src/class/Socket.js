@@ -8,7 +8,7 @@ import {
     AV_SHARE,
     createVideoOutputStream
 } from "../index";
-import {createOffer} from "./RtcPeer";
+import {createOffer, createPCAndAddTrack} from "./RtcPeer";
 
 /**
  * 提供与socket操作相关的接口。
@@ -63,7 +63,6 @@ class Socket {
      * @param newcomer 发送join消息的客户端，即新加入的客户端
      */
     onJoined(participants, newcomer) {
-
         if (Object.keys(this._client.onlinePeer).length === 0) {
             // 添加在线peer信息
             for (let idx in participants) {
@@ -221,6 +220,9 @@ class Socket {
      * @param screenStream 屏幕流
      */
     onScreenTrack(account, screenStream) {
+        if(account === this._client.account){
+            return
+        }
         //let screenTrack = screenStream.getTracks()[0]
         //todo screenTrack.onmute = ;
         console.log(">>> 收到", account, "track")
@@ -232,36 +234,13 @@ class Socket {
     }
 
     /**
-     * 设置监听peerAddStream
-     * 如果存在对应的video组件，将stream输出到该video上
-     * 如果没有，新建一个video，然后将stream输出到video上
-     * @param pc RTCPeerConnection对象 {@link RTCPeerConnection}
-     *
-     */
-    onPeerAddStream(pc) {
-        try {
-            let existVideo = document.querySelector('video#' + pc.peerName);
-            existVideo.srcObject = pc.stream;
-        } catch (e) {
-            let video = document.createElement("video");
-            div.appendChild(video)
-            video.srcObject = pc.stream;
-            video.setAttribute("id", pc.account);
-            video.setAttribute("width", "320");
-            video.setAttribute("height", "240");
-            video.setAttribute("autoplay", "");
-            video.setAttribute("controls", "");
-        }
-    }
-
-    /**
      * 监听ice candidate
      *
      * @param data 对端的emitIceCandidate方法发送的请求内容 {@link emitIceCandidate}
      */
     onIceCandidate(data) {
-        if (data.source === this._client.account) {
-            return;
+        if(data.source === this._client.account){
+            return
         }
         console.log(">>> 收到 ice candidate", data)
         if (data.mediaType === SCREEN_SHARE) {

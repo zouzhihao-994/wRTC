@@ -77,8 +77,6 @@ function avShareHandler() {
 
     navigator.mediaDevices.getUserMedia({audio: false, video: true}).then(stream => {
         gotAvStream(stream)
-        // 设置pc
-
         for (let peerName in client.onlinePeer) {
             if (peerName === client.account) {
                 continue
@@ -87,7 +85,6 @@ function avShareHandler() {
         }
         // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
         socket.emitAvShare()
-
     }).catch(e => {
         console.error('av share getDisplayMedia addTrack error', e);
     })
@@ -113,7 +110,7 @@ function screenShareHandler() {
             if (peerName === client.account) {
                 continue
             }
-            createPCAndAddTrack(peerName,stream, SCREEN_SHARE)
+            createPCAndAddTrack(peerName, stream, SCREEN_SHARE)
         }
 
         // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
