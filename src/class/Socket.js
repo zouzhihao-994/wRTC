@@ -1,7 +1,16 @@
 'use strict';
 
 import io from 'socket.io-client';
-import {div, screenSuffix, getRawPeerName, screenDiv, iceServer, SCREEN_SHARE, AV_SHARE,createVideoOutputStream} from "../index";
+import {
+    div,
+    screenSuffix,
+    getRawPeerName,
+    screenDiv,
+    iceServer,
+    SCREEN_SHARE,
+    AV_SHARE,
+    createVideoOutputStream
+} from "../index";
 import {createOffer, createScreenConnection, createPeerConnection} from "./RtcPeer";
 
 /**
@@ -52,78 +61,22 @@ class Socket {
     }
 
     /**
-     * 监听joined消息
-     * @param participants 该房间的所有客户端信息
-     * @param account 发送joined消息的客户端account
-     */
-    hidden_onJoined(participants, account) {
-        // 只有一个人说明room只有本客户端一个端，不做任何处理
-        if (participants.length === 1) {
-            return
-        }
-
-        // 信令服务器返回的data是所有加入该房间的客户端信息
-        let accountIdArr = []
-        let accounts = ""
-        for (let part in participants) {
-            accountIdArr[part] = participants[part].account
-            accounts = accounts + "," + accountIdArr[part]
-        }
-        console.log("room ", this._client.roomId, "的参与者id: ", accounts)
-
-        participants.forEach(p => {
-            if (p.account !== this._client.account) {
-                // 保存两端连接的名称
-                console.log("peer:", p)
-                let peer = {}
-                let arr = [p.account, this._client.account];
-                peer.peerName = arr.sort().join('-');
-                peer.remoteScreenName = peer.peerName + screenSuffix
-                console.log("peerName:", peer.peerName, "peerScreenName:", peer.remoteScreenName)
-
-                // 创建一个pc，负责连接本端与对端的音视频
-                if (!this._client.existPeer(peer.peerName)) {
-                    createPeerConnection(peer, this._client, this);
-                }
-
-                // 创建一个pc，负责连接本端与对端的屏幕共享
-                if (!this._client.existRemoteScreen(peer.remoteScreenName)) {
-                    createScreenConnection(peer, this._client, this);
-                }
-            }
-        })
-
-        // 如果account是本client，给其他所有peer发送offer sdp
-        if (account === this._client.account) {
-            // p = peerName , peer[p] = peer
-            for (let p in this._client.peer) {
-                console.log("send connect offer to", this._client.peer[p])
-                createOffer(p, this._client.peer[p], this._client, this, AV_SHARE);
-            }
-            // 创建共享桌面连接的offer
-            for (let p in this._client.remoteScreen) {
-                console.log("send screen offer to", this._client.remoteScreen[p])
-                createOffer(p, this._client.remoteScreen[p], this._client, this, SCREEN_SHARE);
-            }
-        }
-    }
-
-    /**
      * 收到join请求时，将room中所有人的account保存
+     * @param participants 该房间里的所有人
+     * @param newcomer 发送join消息的客户端，即新加入的客户端
      */
-    onJoined(participants) {
-        if (participants.length === 1) {
-            return;
-        }
+    onJoined(participants, newcomer) {
 
-        // 添加在线peer信息
-        for (let idx in participants) {
-            if (!this._client._onlinePeer.hasOwnProperty(participants[idx].account)) {
+        if (Object.keys(this._client.onlinePeer).length === 0) {
+            // 添加在线peer信息
+            for (let idx in participants) {
                 this._client.addOnlinePeer(participants[idx].account, participants[idx])
                 console.log("添加新的peer：", this._client.getOnlinePeer(participants[idx].account))
             }
+        } else {
+            this._client.addOnlinePeer(newcomer.account,newcomer)
+            console.log("添加新的peer：", this._client.getOnlinePeer(newcomer.account))
         }
-
     }
 
     /**
@@ -164,15 +117,15 @@ class Socket {
      * @param account
      */
     onAvShared(account) {
-        if(account === this._client.account){
+        if (account === this._client.account) {
             return;
         }
         console.log(">>> 音视频共享请求")
 
         let pc = new RTCPeerConnection(iceServer)
-        pc.ontrack = (event) =>{
-            if(event.streams){
-                this.onScreenTrack(account,event.streams[0])
+        pc.ontrack = (event) => {
+            if (event.streams) {
+                this.onScreenTrack(account, event.streams[0])
             }
         }
         // 设置ice监听
@@ -212,7 +165,7 @@ class Socket {
             })
         } else { //音视频形式
             this._client.peer[data.source] && this._client.peer[data.source].setRemoteDescription(data.sdp, () => {
-                 this._client.peer[data.source].createAnswer().then(desc => {
+                this._client.peer[data.source].createAnswer().then(desc => {
                     this._client.peer[data.source].setLocalDescription(desc, () => {
                         this.emitAnswer(data.source, this._client.roomId, this._client.peer[data.source].localDescription, AV_SHARE)
                     })
