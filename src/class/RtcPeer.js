@@ -38,8 +38,10 @@ function createPCAndAddTrack(account, stream, mediaType) {
 
     // 保存account和pc的映射关系
     if (mediaType === AV_SHARE) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [保存]: 保存 AV PC , account: ", account)
         client.addPeer(account, pc);
     } else {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [保存]: 保存 Screen PC , account: ", account)
         client.addRemoteScreenPC(account, pc)
     }
 
@@ -51,12 +53,14 @@ function createPCAndAddTrack(account, stream, mediaType) {
     }
     // 设置ice监听
     pc.onicecandidate = (event) => {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 icecandidate 消息")
         if (event.candidate) {
             socket.emitIceCandidate(event.candidate, account, mediaType)
         }
     }
     // 设置negotiation监听
     pc.onnegotiationneeded = () => {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 negotiationneeded 消息")
         createOffer(account, pc, client, socket, mediaType)
     }
     // 输出track
@@ -64,6 +68,7 @@ function createPCAndAddTrack(account, stream, mediaType) {
         stream.getTracks().forEach(track => {
             // 设置监听onended事件
             track.onended = socket.onEnded
+            console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: track 给", account)
             // 添加远端
             pc.addTrack(track, stream)
         })

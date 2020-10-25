@@ -22,7 +22,6 @@ let avButton = document.getElementById("avBtn")
 let shareButton = document.getElementById("shareBtn");
 let accountInputValue = document.getElementById('account');
 let roomInputValue = document.getElementById('room');
-let div = document.querySelector('div#videoDiv');
 let screenDiv = document.querySelector('div#screenDiv');
 let localVideo = document.querySelector('video#video1')
 
@@ -157,7 +156,6 @@ function createVideoOutputStream(peer) {
 export {
     client,
     socket,
-    div,
     iceServer,
     screenDiv,
     SCREEN_SHARE,
