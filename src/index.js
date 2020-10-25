@@ -70,56 +70,57 @@ function joinHandler() {
  * 音视频分享
  */
 function avShareHandler() {
-    avButton.display = true
-    if(client.localStream){
+    if (client.localStream) {
         console.log("本地已经存在音视频流，无法再创建")
         return;
     }
 
-    navigator.mediaDevices.getUserMedia({audio: false, video: true}).then(stream =>{
-            gotAvStream(stream)
-            // 设置pc
-            for (let peerName in client.onlinePeer) {
-                if (peerName === client.account) {
-                    continue
-                }
-                // 创建pc
-                let pc = new RTCPeerConnection(iceServer)
-                // 设置track监听
-                pc.ontrack = (event) => {
-                    if (event.streams) {
-                        socket.onScreenTrack(peerName, event.streams[0])
-                    }
-                }
-                // 设置ice监听
-                pc.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        socket.emitIceCandidate(event.candidate, client.roomId, peerName, AV_SHARE)
-                    }
-                }
-                // 设置negotiation监听
-                pc.onnegotiationneeded = () => {
-                    createOffer(peerName, pc, client, socket, AV_SHARE)
-                }
-                // 保存{peerName:pc}
-                client.addPeer(peerName, pc)
-                // 输出track
-                try {
-                    client.localStream.getTracks().forEach(track => {
-                        // 设置监听onended事件
-                        track.onended = socket.onEnded
-                        // 添加远端
-                        pc.addTrack(track, client.localStream)
-                    })
-                } catch (e) {
-                    console.error('share getDisplayMedia addTrack error', e);
+    navigator.mediaDevices.getUserMedia({audio: false, video: true}).then(stream => {
+        gotAvStream(stream)
+        // 设置pc
+        for (let peerName in client.onlinePeer) {
+            if (peerName === client.account) {
+                continue
+            }
+            // 创建pc
+            let pc = new RTCPeerConnection(iceServer)
+            // 设置track监听
+            pc.ontrack = (event) => {
+                if (event.streams) {
+                    socket.onScreenTrack(peerName, event.streams[0])
                 }
             }
+            // 设置ice监听
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emitIceCandidate(event.candidate, client.roomId, peerName, AV_SHARE)
+                }
+            }
+            // 设置negotiation监听
+            pc.onnegotiationneeded = () => {
+                createOffer(peerName, pc, client, socket, AV_SHARE)
+            }
+            // 保存{peerName:pc}
+            client.addPeer(peerName, pc)
+            // 输出track
+            try {
+                client.localStream.getTracks().forEach(track => {
+                    // 设置监听onended事件
+                    track.onended = socket.onEnded
+                    // 添加远端
+                    pc.addTrack(track, client.localStream)
+                })
+            } catch (e) {
+                console.error('share getDisplayMedia addTrack error', e);
+            }
+        }
 
-            // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
-            socket.emitAvShare()
+        // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
+        socket.emitAvShare()
 
-        }).catch(e => {console.error('av share getDisplayMedia addTrack error', e);})
+    }).catch(e => {
+        console.error('av share getDisplayMedia addTrack error', e);
+    })
 }
 
 /**
@@ -183,16 +184,38 @@ function shareHandler() {
 
 function gotScreenStream(stream) {
     client.setLocalScreenStream(stream)
+    if(client.localStream !== null){
+        createVideoOutputStream({peerName: client.account, stream: stream})
+        return
+    }
     localVideo.srcObject = stream
-    shareButton.display = true
-    avButton.display = true
 }
 
-function gotAvStream(stream)  {
+function gotAvStream(stream) {
     client.setLocalStream(stream)
+    //如果已经存在屏幕流，则先创建一个音视频流
+    if(client.localScreenStream !== null){
+        createVideoOutputStream({peerName: client.account, stream: stream})
+        return
+    }
     localVideo.srcObject = stream
-    avButton.display = true
-    shareButton.display = true
+}
+
+/**
+ * 创建一个video
+ * @param peer map类型,包含两个字段 peerName,stream
+ */
+function createVideoOutputStream(peer) {
+    let video = document.createElement("video")
+    screenDiv.appendChild(video)
+
+    video.setAttribute("id", peer.peerName);
+    video.setAttribute("width", "400");
+    video.setAttribute("height", "300");
+    video.setAttribute("autoplay", "");
+    video.setAttribute("controls", "");
+    video.srcObject = peer.stream
+
 }
 
 /**
@@ -206,5 +229,16 @@ function getRawPeerName(str, account) {
     return names[0] === account ? names[1] : names[0];
 }
 
-export {client, socket, div, screenSuffix, iceServer, screenDiv, SCREEN_SHARE, AV_SHARE, getRawPeerName}
+export {
+    client,
+    socket,
+    div,
+    screenSuffix,
+    iceServer,
+    screenDiv,
+    SCREEN_SHARE,
+    AV_SHARE,
+    getRawPeerName,
+    createVideoOutputStream
+}
 

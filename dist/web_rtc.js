@@ -109,6 +109,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SCREEN_SHARE", function() { return SCREEN_SHARE; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "AV_SHARE", function() { return AV_SHARE; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getRawPeerName", function() { return getRawPeerName; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createVideoOutputStream", function() { return createVideoOutputStream; });
 /* harmony import */ var _class_Client__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
 /* harmony import */ var _class_Socket__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
 /* harmony import */ var _class_RtcPeer__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(54);
@@ -182,7 +183,6 @@ function joinHandler() {
  * 音视频分享
  */
 function avShareHandler() {
-    avButton.display = true;
     if (client.localStream) {
         console.log("本地已经存在音视频流，无法再创建");
         return;
@@ -295,16 +295,37 @@ function shareHandler() {
 
 function gotScreenStream(stream) {
     client.setLocalScreenStream(stream);
+    if (client.localStream !== null) {
+        createVideoOutputStream({ peerName: client.account, stream: stream });
+        return;
+    }
     localVideo.srcObject = stream;
-    shareButton.display = true;
-    avButton.display = true;
 }
 
 function gotAvStream(stream) {
     client.setLocalStream(stream);
+    //如果已经存在屏幕流，则先创建一个音视频流
+    if (client.localScreenStream !== null) {
+        createVideoOutputStream({ peerName: client.account, stream: stream });
+        return;
+    }
     localVideo.srcObject = stream;
-    avButton.display = true;
-    shareButton.display = true;
+}
+
+/**
+ * 创建一个video
+ * @param peer map类型,包含两个字段 peerName,stream
+ */
+function createVideoOutputStream(peer) {
+    let video = document.createElement("video");
+    screenDiv.appendChild(video);
+
+    video.setAttribute("id", peer.peerName);
+    video.setAttribute("width", "400");
+    video.setAttribute("height", "300");
+    video.setAttribute("autoplay", "");
+    video.setAttribute("controls", "");
+    video.srcObject = peer.stream;
 }
 
 /**
@@ -727,7 +748,7 @@ class Socket {
         //todo screenTrack.onmute = ;
         console.log(">>> 收到", account, "track");
         try {
-            this.createVideoOutputStream({ account: account, stream: screenStream });
+            Object(_index__WEBPACK_IMPORTED_MODULE_1__["createVideoOutputStream"])({ account: account, stream: screenStream });
         } catch (e) {
             console.error('[Caller error] onRemoteScreenStream', e);
         }
@@ -779,22 +800,6 @@ class Socket {
                 });
             }
         }
-    }
-
-    /**
-     * 创建一个video
-     * @param peer map类型,包含两个字段 peerName,stream
-     */
-    createVideoOutputStream(peer) {
-        let video = document.createElement("video");
-        _index__WEBPACK_IMPORTED_MODULE_1__["screenDiv"].appendChild(video);
-
-        video.srcObject = peer.stream;
-        video.setAttribute("id", peer.peerName);
-        video.setAttribute("width", "400");
-        video.setAttribute("height", "300");
-        video.setAttribute("autoplay", "");
-        video.setAttribute("controls", "");
     }
 
     /**

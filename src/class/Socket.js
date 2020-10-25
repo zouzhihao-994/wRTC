@@ -1,7 +1,7 @@
 'use strict';
 
 import io from 'socket.io-client';
-import {div, screenSuffix, getRawPeerName, screenDiv, iceServer, SCREEN_SHARE, AV_SHARE} from "../index";
+import {div, screenSuffix, getRawPeerName, screenDiv, iceServer, SCREEN_SHARE, AV_SHARE,createVideoOutputStream} from "../index";
 import {createOffer, createScreenConnection, createPeerConnection} from "./RtcPeer";
 
 /**
@@ -286,7 +286,7 @@ class Socket {
         //todo screenTrack.onmute = ;
         console.log(">>> 收到", account, "track")
         try {
-            this.createVideoOutputStream({account: account, stream: screenStream})
+            createVideoOutputStream({account: account, stream: screenStream})
         } catch (e) {
             console.error('[Caller error] onRemoteScreenStream', e)
         }
@@ -338,23 +338,6 @@ class Socket {
                 });
             }
         }
-    }
-
-    /**
-     * 创建一个video
-     * @param peer map类型,包含两个字段 peerName,stream
-     */
-    createVideoOutputStream(peer) {
-        let video = document.createElement("video")
-        screenDiv.appendChild(video)
-
-        video.srcObject = peer.stream
-        video.setAttribute("id", peer.peerName);
-        video.setAttribute("width", "400");
-        video.setAttribute("height", "300");
-        video.setAttribute("autoplay", "");
-        video.setAttribute("controls", "");
-
     }
 
     /**
