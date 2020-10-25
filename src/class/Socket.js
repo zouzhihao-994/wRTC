@@ -74,7 +74,7 @@ class Socket {
         }
 
         // 发送
-        if(this._client.localAvStream !== null){
+        if (this._client.localAvStream !== null) {
 
         }
 
@@ -122,15 +122,7 @@ class Socket {
         if (account === this._client.account) {
             return;
         }
-
-        // 如果对端的pc已经存在，说明已经创建流连接，不再处理
-        if (this._client.peer.hasOwnProperty(account)) {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 AV Share 消息,但是本地已存在，丢弃消息")
-            return
-        }
-
-        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 AV Share 消息")
-
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, " 的 AV Share 消息")
         let pc = new RTCPeerConnection(iceServer)
         pc.ontrack = (event) => {
             if (event.streams) {
