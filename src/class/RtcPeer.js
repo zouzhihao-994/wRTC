@@ -12,13 +12,11 @@ import {client, socket, SCREEN_SHARE, AV_SHARE, iceServer} from "../index";
  * @param mediaType 视频类型，音视频{@link AV_SHARE} or 屏幕共享{@link SCREEN_SHARE}
  */
 function createOffer(account, pc, client, socketServer, mediaType) {
-    console.log(">>> send offer to", account)
     pc.createOffer({
         // offerToReceiveAudio:1,
         offerToReceiveVideo: 1
     }).then((desc) => {
         pc.setLocalDescription(desc, () => {
-            console.log(">>> 设置local description")
             // 发送offer信息
             socketServer.emitOffer(account, pc.localDescription, client.roomId, mediaType)
         }, (err) => {
@@ -48,7 +46,7 @@ function createPCAndAddTrack(account, stream, mediaType) {
     // 设置track监听
     pc.ontrack = (event) => {
         if (event.streams) {
-            socket.onScreenTrack(account, event.streams[0])
+            socket.onTrack(account, event.streams[0])
         }
     }
     // 设置ice监听

@@ -8,7 +8,6 @@ const SCREEN_SHARE = "screen_share"
 const AV_SHARE = "av_share"
 
 
-const screenSuffix = '@ScreenShare';
 const iceServer = {
     "iceServers": [{
         'url': 'turn:119.23.33.178:3478',
@@ -159,7 +158,6 @@ export {
     client,
     socket,
     div,
-    screenSuffix,
     iceServer,
     screenDiv,
     SCREEN_SHARE,

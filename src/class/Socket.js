@@ -2,7 +2,6 @@
 
 import io from 'socket.io-client';
 import {
-    div,
     iceServer,
     SCREEN_SHARE,
     AV_SHARE,
@@ -67,11 +66,11 @@ class Socket {
             // 添加在线peer信息
             for (let idx in participants) {
                 this._client.addOnlinePeer(participants[idx].account, participants[idx])
-                console.log("添加新的peer：", this._client.getOnlinePeer(participants[idx].account))
+                console.log(">>> ", new Date().toLocaleTimeString(), " [新的peer]: ", this._client.getOnlinePeer(participants[idx].account))
             }
         } else {
-            this._client.addOnlinePeer(newcomer.account,newcomer)
-            console.log("添加新的peer：", this._client.getOnlinePeer(newcomer.account))
+            this._client.addOnlinePeer(newcomer.account, newcomer)
+            console.log(">>> ", new Date().toLocaleTimeString(), " [新的peer]: ", this._client.getOnlinePeer(newcomer.account))
         }
 
         // 发送
@@ -91,13 +90,13 @@ class Socket {
         if (account === this._client.account) {
             return;
         }
-        console.log(">>> 收到屏幕共享请求")
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 Screen Share 消息")
         // 创建pc
         let pc = new RTCPeerConnection(iceServer)
         // 设置track监听
         pc.ontrack = (event) => {
             if (event.streams) {
-                this.onScreenTrack(account, event.streams[0])
+                this.onTrack(account, event.streams[0])
             }
         }
         // 设置ice监听
@@ -128,7 +127,7 @@ class Socket {
         let pc = new RTCPeerConnection(iceServer)
         pc.ontrack = (event) => {
             if (event.streams) {
-                this.onScreenTrack(account, event.streams[0])
+                this.onTrack(account, event.streams[0])
             }
         }
         // 设置ice监听
@@ -154,7 +153,7 @@ class Socket {
             return;
         }
         // 屏幕共享的形式
-        console.log(">>> on offer : peer:", data, " client: ", this._client)
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到] ", data.source, " 的 offer 消息")
         if (data.mediaType === SCREEN_SHARE) {
             // data.source 是发送方的account,发送方也就是本端的对端
             this._client.remoteScreen[data.source] && this._client.remoteScreen[data.source].setRemoteDescription(data.sdp, () => {
@@ -200,7 +199,7 @@ class Socket {
         if (data.source === this._client.account) {
             return;
         }
-        console.log(">>> 收到 answer", data)
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到] ", data.source, "的 answer 消息")
         // 屏幕共享模式
         if (data.mediaType === SCREEN_SHARE) {
             this._client.remoteScreen[data.source] && this._client.remoteScreen[data.source].setRemoteDescription(data.sdp, function () {
@@ -219,13 +218,13 @@ class Socket {
      * @param account 对端的account
      * @param screenStream 屏幕流
      */
-    onScreenTrack(account, screenStream) {
-        if(account === this._client.account){
+    onTrack(account, screenStream) {
+        if (account === this._client.account) {
             return
         }
         //let screenTrack = screenStream.getTracks()[0]
         //todo screenTrack.onmute = ;
-        console.log(">>> 收到", account, "track")
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到] ", account, "的 track")
         try {
             createVideoOutputStream({account: account, stream: screenStream})
         } catch (e) {
@@ -239,10 +238,10 @@ class Socket {
      * @param data 对端的emitIceCandidate方法发送的请求内容 {@link emitIceCandidate}
      */
     onIceCandidate(data) {
-        if(data.source === this._client.account){
+        if (data.source === this._client.account) {
             return
         }
-        console.log(">>> 收到 ice candidate", data)
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到] ", data.source, " 发送的ice candidate", data)
         if (data.mediaType === SCREEN_SHARE) {
             if (data.candidate) {
                 this._client.remoteScreen[data.source].addIceCandidate(data.candidate).catch((err) => {
@@ -262,24 +261,24 @@ class Socket {
      * 发送join消息
      */
     emitJoin() {
-        console.log("socket emit join msg")
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送] join 广播消息到信令服务器")
         this._socketServer.emit('join', {roomId: this._client.roomId, account: this._client.account,})
     }
 
     /**
      * 发送offer信息
      * dest是对端的account，source是自己的account
-     * @param peerName 对端peer name
+     * @param dest 对端的account
      * @param localDescription 描述信息 {@link RTCPeerConnection#localDescription}
      * @param roomId 房间id
      * @param mediaType 视频的类型 {@link #SCREEN_SHARE} or {@link }
      */
-    emitOffer(peerName, localDescription, roomId, mediaType) {
-        console.log("socket emit sdp offer")
+    emitOffer(dest, localDescription, roomId, mediaType) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送] offer 到信令服务器 , {dest: ", dest, "}")
         this._socketServer.emit('offer', {
             'sdp': localDescription,
             'roomId': roomId,
-            'dest': peerName,
+            'dest': dest,
             'source': this._client.account,
             'mediaType': mediaType
         })
@@ -289,7 +288,7 @@ class Socket {
      * 发送音视频(av share)共享消息
      */
     emitAvShare() {
-        console.log(">>> socket emit av share msg to room", this._client.roomId)
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送] Av Share 广播消息到信令服务器")
         this._socketServer.emit('avShare', {
             'account': this._client.account,
             'roomId': this._client.roomId,
@@ -300,7 +299,7 @@ class Socket {
      * 本客户端发送screenShare事件
      */
     emitScreenShare() {
-        console.log(">>> socket emit screen share msg to room ", this._client.roomId)
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送] Screen Share 广播消息到信令服务器")
         this._socketServer.emit('screenShare', {
             account: this._client.account,
             roomId: this._client.roomId
@@ -316,7 +315,7 @@ class Socket {
      * @param mediaType 视频类型，音视频{@link AV_SHARE} or 屏幕共享{@link SCREEN_SHARE}
      */
     emitAnswer(dest, roomId, localDescription, mediaType) {
-        console.log(">>> 发送answer to account :", dest)
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送] answer 到信令服务器,{dest: ", dest, "} {mediaType: ", mediaType, "}")
         this._socketServer.emit('answer', {
             'sdp': localDescription,
             'roomId': roomId,
@@ -334,7 +333,7 @@ class Socket {
      * @param mediaType 进行的视频类型 音视频类型{@link AV_SHARE} or 屏幕共享类型{@link SCREEN_SHARE}
      */
     emitIceCandidate(candidate, account, mediaType) {
-        console.log(">>> 发送 icecandidate to account ", account)
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送] icecandidate 到信令服务器,{dest", account, "} {mediaType:", mediaType, "}")
         this._socketServer.emit('ice_candidate', {
             'candidate': candidate,
             'roomId': this._client.roomId,
