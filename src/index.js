@@ -124,6 +124,19 @@ function screenShareHandler() {
 
 }
 
+function closeScreenShare() {
+    // 发送closeScreenShare消息给所有收听者
+
+
+    // 初始化本地配置
+    // 初始化screen stream
+    client.localScreenStream = null;
+    // 隐藏video
+
+
+}
+
+
 /**
  * 输出Screen Stream到video
  * @param stream 屏幕共享流 {@link Client#localScreenStream }
@@ -131,7 +144,7 @@ function screenShareHandler() {
 function gotScreenStream(stream) {
     client.setLocalScreenStream(stream)
     if (client.localAvStream !== null) {
-        createVideoOutputStream({peerName: client.account, stream: stream})
+        createVideoOutputStream(client.account, stream)
         return
     }
     localVideo.srcObject = stream
@@ -145,26 +158,27 @@ function gotAvStream(stream) {
     client.setLocalAvStream(stream)
     //如果已经存在屏幕流，则先创建一个音视频流
     if (client.localScreenStream !== null) {
-        createVideoOutputStream({peerName: client.account, stream: stream})
+        createVideoOutputStream(client.account, stream)
         return
     }
     localVideo.srcObject = stream
 }
 
 /**
- * 创建一个video
- * @param peer map类型,包含两个字段 peerName,stream
+ * 创建一个video并输出
+ * @param account 对端的account
+ * @param stream 对端的stream
  */
-function createVideoOutputStream(peer) {
+function createVideoOutputStream(account, stream) {
     let video = document.createElement("video")
     screenDiv.appendChild(video)
 
-    video.setAttribute("id", peer.peerName);
+    video.setAttribute("id", account);
     video.setAttribute("width", "400");
     video.setAttribute("height", "300");
     video.setAttribute("autoplay", "");
     video.setAttribute("controls", "");
-    video.srcObject = peer.stream
+    video.srcObject = stream
 
 }
 

@@ -77,7 +77,7 @@ class Socket {
             this.emitAvShareToAccount(newcomer.account)
             rtcService.createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
         }
-        if(client.localScreenStream !== null){
+        if (client.localScreenStream !== null) {
             this.emitScreenShareToAccount(newcomer.account)
             rtcService.createPCAndAddTrack(newcomer.account, client.localScreenStream, SCREEN_SHARE)
         }
@@ -241,7 +241,7 @@ class Socket {
         //todo screenTrack.onmute = ;
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 track")
         try {
-            createVideoOutputStream({account: account, stream: screenStream})
+            createVideoOutputStream(account, screenStream)
         } catch (e) {
             console.error('[Caller error] onRemoteScreenStream', e)
         }
@@ -318,7 +318,7 @@ class Socket {
         })
     }
 
-    emitScreenShareToAccount(dest){
+    emitScreenShareToAccount(dest) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: Screen Share 消息到信令服务器 , dest:", dest)
         this._socketServer.emit('screenShareToAccount', {
             'dest': dest,
