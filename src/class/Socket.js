@@ -3,12 +3,12 @@
 import io from 'socket.io-client';
 import {
     iceServer,
+    rtcService,
     SCREEN_SHARE,
     AV_SHARE,
     client,
     createVideoOutputStream, socket
 } from "../index";
-import {createOffer, createPCAndAddTrack} from "./RtcPeer";
 
 /**
  * 提供与socket操作相关的接口。
@@ -75,7 +75,7 @@ class Socket {
         // 发送
         if (client.localAvStream !== null) {
             this.emitAvShareToAccount(newcomer.account)
-            createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
+            rtcService.createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
         }
     }
 
@@ -105,7 +105,7 @@ class Socket {
         }
         // 设置negotiation监听
         pc.onnegotiationneeded = () => {
-            createOffer(account, pc, client, this, SCREEN_SHARE)
+            rtcService.createOffer(account, pc, client, this, SCREEN_SHARE)
         }
         // 保存{peerName:pc}
         client.addRemoteScreenPC(account, pc)
@@ -135,7 +135,7 @@ class Socket {
         }
         // 设置negotiation监听
         pc.onnegotiationneeded = () => {
-            createOffer(account, pc, client, this, AV_SHARE)
+            rtcService.createOffer(account, pc, client, this, AV_SHARE)
         }
         // 保存{peerName:pc}
         client.addRemoteAvPC(account, pc)

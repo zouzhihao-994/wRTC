@@ -2,7 +2,7 @@
 
 import {Client} from "./class/Client";
 import {Socket} from "./class/Socket";
-import {createOffer, createPCAndAddTrack} from "./class/RtcPeer";
+import {RTCService} from "./class/RTCService";
 
 const SCREEN_SHARE = "screen_share"
 const AV_SHARE = "av_share"
@@ -28,6 +28,7 @@ let localVideo = document.querySelector('video#video1')
 // 客户端信息
 let client;
 let socket;
+let rtcService;
 
 // 本地环境
 let local_env = "ws://127.0.0.1:9944"
@@ -62,6 +63,9 @@ function joinHandler() {
     socket = new Socket(socketUrl)
     socket.init()
 
+    console.log(">>> ", new Date().toLocaleTimeString(), " [初始化]: rtcService ...")
+    rtcService = new RTCService()
+
     // 发送join消息
     socket.emitJoin();
 }
@@ -81,7 +85,7 @@ function avShareHandler() {
             if (peerName === client.account) {
                 continue
             }
-            createPCAndAddTrack(peerName, stream, AV_SHARE)
+            rtcService.createPCAndAddTrack(peerName, stream, AV_SHARE)
         }
         // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
         socket.emitAvShare()
@@ -110,7 +114,7 @@ function screenShareHandler() {
             if (peerName === client.account) {
                 continue
             }
-            createPCAndAddTrack(peerName, stream, SCREEN_SHARE)
+            rtcService.createPCAndAddTrack(peerName, stream, SCREEN_SHARE)
         }
 
         // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
@@ -158,6 +162,7 @@ function createVideoOutputStream(peer) {
 export {
     client,
     socket,
+    rtcService,
     iceServer,
     screenDiv,
     SCREEN_SHARE,
