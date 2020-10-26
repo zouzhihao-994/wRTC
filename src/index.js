@@ -85,6 +85,7 @@ function avShareHandler() {
             if (peerName === client.account) {
                 continue
             }
+            // 创建对端pc，设置回调函数，添加track
             rtcService.createPCAndAddTrack(peerName, stream, AV_SHARE)
         }
         // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
@@ -109,11 +110,11 @@ function screenShareHandler() {
         // 设置流
         gotScreenStream(stream)
 
-        // 设置pc
         for (let peerName in client.onlinePeer) {
             if (peerName === client.account) {
                 continue
             }
+            // 创建对端pc，设置回调函数，添加track
             rtcService.createPCAndAddTrack(peerName, stream, SCREEN_SHARE)
         }
 
