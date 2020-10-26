@@ -9,7 +9,7 @@ import {
     client,
     socket,
     createVideoOutputStream,
-    removeRemoteVideoElement
+    removeVideoElement
 } from "../index";
 
 /**
@@ -53,6 +53,9 @@ class Socket {
         // 监听音视频共享消息
         this._socketServer.on("avShared", (account) => {
             this.onAvShared(account)
+        })
+        this._socketServer.on("onCloseShare", (source, mediaType) => {
+            this.onCloseShare(source, mediaType)
         })
 
     }
@@ -100,7 +103,7 @@ class Socket {
         // 设置track监听
         pc.ontrack = (event) => {
             if (event.streams) {
-                this.onTrack(account, event.streams[0],SCREEN_SHARE)
+                this.onTrack(account, event.streams[0], SCREEN_SHARE)
             }
         }
         // 设置ice监听
@@ -130,7 +133,7 @@ class Socket {
         let pc = new RTCPeerConnection(iceServer)
         pc.ontrack = (event) => {
             if (event.streams) {
-                this.onTrack(account, event.streams[0],AV_SHARE)
+                this.onTrack(account, event.streams[0], AV_SHARE)
             }
         }
         // 设置ice监听
@@ -145,6 +148,20 @@ class Socket {
         }
         // 保存{peerName:pc}
         client.addRemoteAvPC(account, pc)
+    }
+
+    /**
+     * 监听closeShare消息
+     * @param source 发送消息的account
+     * @param mediaType 要关闭的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
+     */
+    onCloseShare(source, mediaType) {
+        if (source === client.account) {
+            return
+        }
+        // 删除对应的video
+        removeVideoElement(source + "_" + mediaType)
+        // 删除对端的消息
     }
 
     /**
@@ -223,7 +240,7 @@ class Socket {
      * @param screenStream 屏幕流
      * @param mediaType 要输出的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
-    onTrack(account, screenStream,mediaType) {
+    onTrack(account, screenStream, mediaType) {
         if (account === client.account) {
             return
         }
@@ -231,7 +248,7 @@ class Socket {
         //todo screenTrack.onmute = ;
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 track")
         try {
-            createVideoOutputStream(account, screenStream,mediaType)
+            createVideoOutputStream(account, screenStream, mediaType)
         } catch (e) {
             console.error('[Caller error] onRemoteScreenStream', e)
         }
@@ -276,10 +293,10 @@ class Socket {
      * @param mediaType 要关闭分享的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
     emitCloseShare(mediaType) {
-        console.log(">>> ", new Date().toLocaleTimeString(), " [发送] closeScreenShare 广播消息到信令服务器")
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送] close ", mediaType, " 广播消息到信令服务器,room = ", client.roomId)
         this._socketServer.emit('closeShare', {
             'roomId': client.roomId,
-            'account': client.account,
+            'source': client.account,
             'mediaType': mediaType
         })
     }

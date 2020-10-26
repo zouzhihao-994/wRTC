@@ -133,16 +133,25 @@ function screenShareHandler() {
     }).catch(e => console.log('getUserMedia() error: ', e));
 }
 
-function closeScreenShare() {
-    // 发送closeScreenShare消息给所有收听者
+/**
+ * 本端关闭分享
+ * @param mediaType 要关闭分享的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
+ */
+function closeShareHandle(mediaType) {
 
-
-    // 初始化本地配置
     // 初始化screen stream
-    client.localScreenStream = null;
-    // 隐藏video
+    if (mediaType === AV_SHARE) {
+        this.localAvStream.stop()
+        client.setLocalAvStream(null)
+    } else {
+        client.setLocalScreenStream(null)
+    }
 
+    // 发送closeScreenShare消息给所有收听者
+    socket.emitCloseShare(mediaType)
 
+    // 删除local video
+    removeVideoElement(mediaType)
 }
 
 
@@ -186,6 +195,16 @@ function createVideoOutputStream(account, stream, mediaType) {
     video.srcObject = stream
 }
 
+/**
+ * 获取video组件
+ * @param elemId 要关闭的video元素的id
+ * @see createVideoOutputStream
+ */
+function removeVideoElement(elemId) {
+    let elem = document.getElementById(elemId);
+    elem.remove();
+}
+
 export {
     client,
     socket,
@@ -195,6 +214,6 @@ export {
     SCREEN_SHARE,
     AV_SHARE,
     createVideoOutputStream,
-    removeRemoteVideoElement
+    removeVideoElement
 }
 
