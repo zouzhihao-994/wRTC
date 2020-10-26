@@ -11,35 +11,32 @@ class Client {
         this._roomId = roomId;
         this._socketUrl = url
 
-        /**
-         * 当前房间的在线客户端信息 {K:peerName,V:peer}
-         * @node 包含本客户端
-         */
+        // 当前房间的在线客户端信息 {K:account,V:clientInfo}
         this._onlinePeer = {}
 
         // ---------------remote av--------------------
         // 本地音视频流
-        this._localStream = null
-        // 用于存储视频流的对端,K:peerName. V:peer pc
+        this._localAvStream = null
+        // 用于存储视频流的对端,K:account. V:peer pc
         this._remoteAvPC = {}
         this._remoteAvStream = {}
 
         // ---------------remote screen--------------------
         // 存储本地屏幕流
         this._localScreenStream = null
-        // 用于存储屏幕共享的对端，K:peerName,V:peer pc
+        // 用于存储屏幕共享的对端，K:account,V:对端的pc
         this._remoteScreenPC = {}
-        // 用于存储对端的stream, K:peerName. V:peer stream
+        // 用于存储对端的stream, K:account. V:peer stream
         this._remoteScreenStream = {}
     }
 
 
-    get localStream() {
-        return this._localStream;
+    get localAvStream() {
+        return this._localAvStream;
     }
 
-    setLocalStream(stream) {
-        this._localStream = stream;
+    setLocalAvStream(stream) {
+        this._localAvStream = stream;
     }
 
     getOnlinePeer(peerName) {
@@ -58,23 +55,15 @@ class Client {
         this._localScreenStream = stream;
     }
 
-    addRemoteScreen(remoteScreenName, peer) {
+    addRemoteScreenPC(remoteScreenName, peer) {
         this._remoteScreenPC[remoteScreenName] = peer
-    }
-
-    existRemoteScreen(remoteScreenName) {
-        return this._remoteScreenPC[remoteScreenName]
     }
 
     addPeerStream(account, stream) {
         this._remoteScreenStream[account] = stream;
     }
 
-    existPeer(peerName) {
-        return this._remoteAvPC[peerName]
-    }
-
-    addPeer(peerName, pc) {
+    addRemoteAvPC(peerName, pc) {
         this._remoteAvPC[peerName] = pc
     }
 
@@ -86,7 +75,7 @@ class Client {
         return this._remoteScreenPC;
     }
 
-    get peer() {
+    get remoteAvPC() {
         return this._remoteAvPC;
     }
 
