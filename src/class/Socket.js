@@ -74,10 +74,9 @@ class Socket {
 
         // 发送
         if (client.localAvStream !== null) {
-
+            this.emitAvShareToAccount(newcomer.account)
+            createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
         }
-
-
     }
 
     /**
