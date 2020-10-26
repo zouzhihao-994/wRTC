@@ -123,6 +123,10 @@ function screenShareHandler() {
 
 }
 
+/**
+ * 输出Screen Stream到video
+ * @param stream 屏幕共享流 {@link Client#localScreenStream }
+ */
 function gotScreenStream(stream) {
     client.setLocalScreenStream(stream)
     if (client.localAvStream !== null) {
@@ -132,6 +136,10 @@ function gotScreenStream(stream) {
     localVideo.srcObject = stream
 }
 
+/**
+ * 输出Screen Stream到video
+ * @param stream 音视频流{@link client#localAvStream}
+ */
 function gotAvStream(stream) {
     client.setLocalAvStream(stream)
     //如果已经存在屏幕流，则先创建一个音视频流
