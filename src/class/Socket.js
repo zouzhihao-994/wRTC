@@ -281,18 +281,31 @@ class Socket {
     }
 
     /**
+     * 发送停止分享的广播消息
+     * 停止分享本客户端mediaType类型的视频给房间所有人
+     * @param mediaType 要关闭分享的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
+     */
+    emitCloseShare(mediaType) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送] closeScreenShare 广播消息到信令服务器")
+        this._socketServer.emit('closeScreenShare', {
+            'roomId': client.roomId,
+            'account': client.account,
+            'mediaType': mediaType
+        })
+    }
+
+    /**
      * 发送offer信息
      * dest是对端的account，source是自己的account
      * @param dest 对端的account
      * @param localDescription 描述信息 {@link RTCPeerConnection#localDescription}
-     * @param roomId 房间id
-     * @param mediaType 视频的类型 {@link #SCREEN_SHARE} or {@link }
+     * @param mediaType 要关闭分享的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
-    emitOffer(dest, localDescription, roomId, mediaType) {
+    emitOffer(dest, localDescription, mediaType) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: offer 到信令服务器 , {dest: ", dest, "}")
         this._socketServer.emit('offer', {
             'sdp': localDescription,
-            'roomId': roomId,
+            'roomId': client.roomId,
             'dest': dest,
             'source': client.account,
             'mediaType': mediaType

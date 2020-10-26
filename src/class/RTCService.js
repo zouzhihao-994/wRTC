@@ -20,7 +20,7 @@ class RTCService{
         }).then((desc) => {
             pc.setLocalDescription(desc, () => {
                 // 发送offer信息
-                socket.emitOffer(account, pc.localDescription, client.roomId, mediaType)
+                socket.emitOffer(account, pc.localDescription, mediaType)
             }, (err) => {
                 console.log('create offer Error]', err)
             })
