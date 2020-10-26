@@ -77,6 +77,10 @@ class Socket {
             this.emitAvShareToAccount(newcomer.account)
             rtcService.createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
         }
+        if(client.localScreenStream !== null){
+            this.emitScreenShareToAccount(newcomer.account)
+            rtcService.createPCAndAddTrack(newcomer.account, client.localScreenStream, SCREEN_SHARE)
+        }
     }
 
     /**
@@ -199,7 +203,14 @@ class Socket {
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, "的 answer 消息")
         // 屏幕共享模式
         if (data.mediaType === SCREEN_SHARE) {
-            client.remoteScreen[data.source] && client.remoteScreen[data.source].setRemoteDescription(data.sdp, function () {
+            client.remoteScreen[data.source] && client.remoteScreen[data.source].setRemoteDescription(data.sdp, () => {
+                // 设置ice监听
+                client.remoteScreen[data.source].remoteScreen = (event) => {
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, "的 icecandidate 消息")
+                    if (event.candidate) {
+                        socket.emitIceCandidate(event.candidate, data.source, data.mediaType)
+                    }
+                }
             }, (err) => {
                 console.error('setRemoteDescription error:', err, data.source);
             })
@@ -302,6 +313,14 @@ class Socket {
     emitAvShareToAccount(dest) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: Av Share 消息到信令服务器 , dest:", dest)
         this._socketServer.emit('avShareToAccount', {
+            'dest': dest,
+            'source': client.account
+        })
+    }
+
+    emitScreenShareToAccount(dest){
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: Screen Share 消息到信令服务器 , dest:", dest)
+        this._socketServer.emit('screenShareToAccount', {
             'dest': dest,
             'source': client.account
         })
