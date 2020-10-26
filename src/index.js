@@ -53,11 +53,13 @@ function joinHandler() {
     avButton.display = false
 
     // 创建客户端
+    console.log(">>> ", new Date().toLocaleTimeString(), " [初始化]: client ...")
     client = new Client(accountInputValue.value, roomInputValue.value, socketUrl)
     client.toString()
 
     // 创建Socket
-    socket = new Socket(socketUrl, client)
+    console.log(">>> ", new Date().toLocaleTimeString(), " [初始化]: socket ...")
+    socket = new Socket(socketUrl)
     socket.init()
 
     // 发送join消息
