@@ -20,10 +20,12 @@ const iceServer = {
 let joinButton = document.getElementById("joinBtn")
 let avButton = document.getElementById("avBtn")
 let shareButton = document.getElementById("shareBtn");
+let closeAvButton = document.getElementById("closeAvBtn")
+let closeScreenButton = document.getElementById("closeScreenBtn")
 let accountInputValue = document.getElementById('account');
 let roomInputValue = document.getElementById('room');
-let screenDiv = document.querySelector('div#screenDiv');
-let localVideo = document.querySelector('video#video1')
+let remoteScreenDiv = document.querySelector('div#screenDiv');
+let localVideoDiv = document.querySelector('div#videoDiv')
 
 // 客户端信息
 let client;
@@ -41,6 +43,12 @@ let socketUrl = local_env
 joinButton.addEventListener('click', joinHandler)
 shareButton.addEventListener('click', screenShareHandler)
 avButton.addEventListener('click', avShareHandler);
+closeScreenButton.addEventListener('click', () => {
+    closeShareHandle(SCREEN_SHARE)
+});
+closeAvButton.addEventListener('click', () => {
+    closeShareHandle(AV_SHARE)
+});
 
 /**
  * join事件
@@ -80,7 +88,8 @@ function avShareHandler() {
     }
 
     navigator.mediaDevices.getUserMedia({audio: false, video: true}).then(stream => {
-        gotAvStream(stream)
+        client.setLocalAvStream(stream)
+        createLocalVideo(AV_SHARE)
         for (let peerName in client.onlinePeer) {
             if (peerName === client.account) {
                 continue
@@ -108,7 +117,8 @@ function screenShareHandler() {
     // 获取桌面,同时设置本地stream和video为stream
     navigator.mediaDevices.getDisplayMedia().then(stream => {
         // 设置流
-        gotScreenStream(stream)
+        client.setLocalScreenStream(stream)
+        createLocalVideo(SCREEN_SHARE)
 
         for (let peerName in client.onlinePeer) {
             if (peerName === client.account) {
@@ -121,7 +131,6 @@ function screenShareHandler() {
         // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
         socket.emitScreenShare()
     }).catch(e => console.log('getUserMedia() error: ', e));
-
 }
 
 function closeScreenShare() {
@@ -138,48 +147,43 @@ function closeScreenShare() {
 
 
 /**
- * 输出Screen Stream到video
- * @param stream 屏幕共享流 {@link Client#localScreenStream }
+ * 添加本端的video
  */
-function gotScreenStream(stream) {
-    client.setLocalScreenStream(stream)
-    if (client.localAvStream !== null) {
-        createVideoOutputStream(client.account, stream)
-        return
-    }
-    localVideo.srcObject = stream
-}
+function createLocalVideo(mediaType) {
+    console.log(">>> ", new Date().toLocaleTimeString(), " [创建]: 本地video，输出:", mediaType)
+    let video = document.createElement("video")
+    localVideoDiv.appendChild(video)
 
-/**
- * 输出Screen Stream到video
- * @param stream 音视频流{@link client#localAvStream}
- */
-function gotAvStream(stream) {
-    client.setLocalAvStream(stream)
-    //如果已经存在屏幕流，则先创建一个音视频流
-    if (client.localScreenStream !== null) {
-        createVideoOutputStream(client.account, stream)
-        return
+    video.setAttribute("id", mediaType);
+    video.setAttribute("width", "400");
+    video.setAttribute("height", "300");
+    video.setAttribute("autoplay", "");
+    video.setAttribute("controls", "");
+
+    if (mediaType === AV_SHARE) {
+        video.srcObject = client.localAvStream
+    } else {
+        video.srcObject = client.localScreenStream
     }
-    localVideo.srcObject = stream
 }
 
 /**
  * 创建一个video并输出
+ * @note video的id为 {account}_{mediaType},例如 "靓仔_screen_share"
  * @param account 对端的account
  * @param stream 对端的stream
+ * @param mediaType 要创建的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
  */
-function createVideoOutputStream(account, stream) {
+function createVideoOutputStream(account, stream, mediaType) {
     let video = document.createElement("video")
-    screenDiv.appendChild(video)
+    remoteScreenDiv.appendChild(video)
 
-    video.setAttribute("id", account);
+    video.setAttribute("id", account + "_" + mediaType);
     video.setAttribute("width", "400");
     video.setAttribute("height", "300");
     video.setAttribute("autoplay", "");
     video.setAttribute("controls", "");
     video.srcObject = stream
-
 }
 
 export {
@@ -187,9 +191,10 @@ export {
     socket,
     rtcService,
     iceServer,
-    screenDiv,
+    remoteScreenDiv,
     SCREEN_SHARE,
     AV_SHARE,
-    createVideoOutputStream
+    createVideoOutputStream,
+    removeRemoteVideoElement
 }
 

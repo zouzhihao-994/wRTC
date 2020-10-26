@@ -50,7 +50,7 @@ class RTCService{
         // 设置track监听
         pc.ontrack = (event) => {
             if (event.streams) {
-                socket.onTrack(account, event.streams[0])
+                socket.onTrack(account, event.streams[0],mediaType)
             }
         }
         // 设置negotiation监听
@@ -61,8 +61,6 @@ class RTCService{
         // 输出track
         try {
             stream.getTracks().forEach(track => {
-                // 设置监听onended事件
-                track.onended = socket.onEnded
                 console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: track 给", account)
                 // 添加远端
                 pc.addTrack(track, stream)

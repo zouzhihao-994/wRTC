@@ -7,7 +7,9 @@ import {
     SCREEN_SHARE,
     AV_SHARE,
     client,
-    createVideoOutputStream, socket
+    socket,
+    createVideoOutputStream,
+    removeRemoteVideoElement
 } from "../index";
 
 /**
@@ -98,7 +100,7 @@ class Socket {
         // 设置track监听
         pc.ontrack = (event) => {
             if (event.streams) {
-                this.onTrack(account, event.streams[0])
+                this.onTrack(account, event.streams[0],SCREEN_SHARE)
             }
         }
         // 设置ice监听
@@ -128,7 +130,7 @@ class Socket {
         let pc = new RTCPeerConnection(iceServer)
         pc.ontrack = (event) => {
             if (event.streams) {
-                this.onTrack(account, event.streams[0])
+                this.onTrack(account, event.streams[0],AV_SHARE)
             }
         }
         // 设置ice监听
@@ -180,19 +182,6 @@ class Socket {
     }
 
     /**
-     * 监听ended消息
-     */
-    onEnded() {
-        client.setLocalScreenStream(null)
-        // 本地流设为null
-        client.setLocalAvStream(null)
-        // todo 移除远端流
-
-        let state = {account: client.account, type: 'screenMute', value: false}
-        this.emitUpdateState(state, client.account)
-    }
-
-    /**
      * 监听answer消息
      * @param data
      */
@@ -232,8 +221,9 @@ class Socket {
     /**
      * @param account 对端的account
      * @param screenStream 屏幕流
+     * @param mediaType 要输出的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
-    onTrack(account, screenStream) {
+    onTrack(account, screenStream,mediaType) {
         if (account === client.account) {
             return
         }
@@ -241,7 +231,7 @@ class Socket {
         //todo screenTrack.onmute = ;
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 track")
         try {
-            createVideoOutputStream(account, screenStream)
+            createVideoOutputStream(account, screenStream,mediaType)
         } catch (e) {
             console.error('[Caller error] onRemoteScreenStream', e)
         }
@@ -287,7 +277,7 @@ class Socket {
      */
     emitCloseShare(mediaType) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [发送] closeScreenShare 广播消息到信令服务器")
-        this._socketServer.emit('closeScreenShare', {
+        this._socketServer.emit('closeShare', {
             'roomId': client.roomId,
             'account': client.account,
             'mediaType': mediaType
