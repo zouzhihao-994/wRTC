@@ -6,7 +6,7 @@ import {
     SCREEN_SHARE,
     AV_SHARE,
     client,
-    createVideoOutputStream
+    createVideoOutputStream, socket
 } from "../index";
 import {createOffer, createPCAndAddTrack} from "./RtcPeer";
 
@@ -205,7 +205,14 @@ class Socket {
                 console.error('setRemoteDescription error:', err, data.source);
             })
         } else { // 音视频模式
-            client.remoteAvPC[data.source] && client.remoteAvPC[data.source].setRemoteDescription(data.sdp, function () {
+            client.remoteAvPC[data.source] && client.remoteAvPC[data.source].setRemoteDescription(data.sdp, () => {
+                // 设置ice监听
+                client.remoteAvPC[data.source].onicecandidate = (event) => {
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, "的 icecandidate 消息")
+                    if (event.candidate) {
+                        socket.emitIceCandidate(event.candidate, data.source, data.mediaType)
+                    }
+                }
             }, (err) => {
                 console.error('setRemoteDescription error:', err, data.source);
             })

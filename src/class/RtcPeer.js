@@ -51,13 +51,6 @@ function createPCAndAddTrack(account, stream, mediaType) {
             socket.onTrack(account, event.streams[0])
         }
     }
-    // 设置ice监听
-    pc.onicecandidate = (event) => {
-        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 icecandidate 消息")
-        if (event.candidate) {
-            socket.emitIceCandidate(event.candidate, account, mediaType)
-        }
-    }
     // 设置negotiation监听
     pc.onnegotiationneeded = () => {
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 negotiationneeded 消息")
