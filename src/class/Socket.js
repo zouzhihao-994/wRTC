@@ -140,7 +140,7 @@ class Socket {
             createOffer(account, pc, client, this, AV_SHARE)
         }
         // 保存{peerName:pc}
-        this._client.addPeer(account, pc)
+        this._client.addRemoteAvPC(account, pc)
     }
 
     /**
