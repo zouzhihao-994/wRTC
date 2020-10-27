@@ -150,19 +150,21 @@ class Socket {
      * @param mediaType 要关闭的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
     onCloseShare(source, mediaType) {
-        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", source, " 的 close ", mediaType, " 消息")
         if (source === client.account) {
             return
         }
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", source, " 的 close ", mediaType, " 消息")
 
         // 删除对应的remote video
         removeVideoElement(source + "_" + mediaType)
 
-        // 关闭screen pc
+        // 移除对端的连接信息
         if (mediaType === SCREEN_SHARE) {
-            client.remoteScreen[source]
-            && client.remoteScreen[source].close()
-            && client.delRemoteScreenPC(source)
+            let pc = client.remoteScreen[source]
+            pc.ontrack = null
+            pc.onicecandidate = null
+            pc.close()
+            client.delRemoteScreenPC(source)
         } else { // 关闭 av pc
 
         }

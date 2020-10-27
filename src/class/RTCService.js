@@ -1,6 +1,6 @@
 'use strict';
 
-import {client, socket, SCREEN_SHARE, AV_SHARE, iceServer} from "../index";
+import {client, socket, SCREEN_SHARE, AV_SHARE, iceServer, removeVideoElement, rtcService} from "../index";
 
 class RTCService {
     constructor() {
@@ -57,6 +57,12 @@ class RTCService {
         try {
             stream.getTracks().forEach(track => {
                 console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: track 给", account)
+                // 设置停止共享监听
+                track.onended = event => {
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 Close Screen Share 消息")
+                    rtcService.closeShare(mediaType)
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: event = ", event)
+                }
                 // 添加远端
                 pc.addTrack(track, stream)
             })
@@ -65,20 +71,42 @@ class RTCService {
         }
     }
 
-    stopScreenTracks() {
-        if (!client.localScreenStream) {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [无效]: 当前没有进行 Screen 分享,无法关闭")
+    /**
+     * 本端关闭分享
+     * @param mediaType 要关闭分享的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
+     */
+    closeShare(mediaType) {
+        if (client.localScreenStream === null) {
+            console.log(">>> ", new Date().toLocaleTimeString(), " [warn]: 当前没有进行 Screen 分享,无法关闭")
+            return false
         }
-        // 关闭track
-        client.localScreenStream.getTracks().forEach(track => {
-            track.stop()
-        })
-        // 设置null
-        client.setLocalScreenStream(null)
+
+        // 发送closeScreenShare消息给所有收听者
+        socket.emitCloseShare(mediaType)
+
+        // 停止
+        if (mediaType === SCREEN_SHARE) {
+            this.delScreenStream()
+        } else {
+        }
+
+        // 删除local video
+        removeVideoElement(mediaType)
+
+        return true
     }
 
-    stopAvTracks() {
+    /**
+     * 清除stream
+     * 1.关闭track -> 2.关闭stream -> 3.设置null
+     */
+    delScreenStream() {
+        client.localScreenStream.getTracks().forEach(track => {
+            track.stop()
+            client.localScreenStream.removeTrack(track)
+        })
 
+        client.setLocalScreenStream(null)
     }
 
 }
