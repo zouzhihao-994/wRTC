@@ -7,7 +7,6 @@ import {RTCService} from "./class/RTCService";
 const SCREEN_SHARE = "screen_share"
 const AV_SHARE = "av_share"
 
-
 const iceServer = {
     "iceServers": [{
         'urls': 'turn:119.23.33.178:3478',
@@ -20,10 +19,8 @@ const iceServer = {
 let joinButton = document.getElementById("joinBtn")
 let avButton = document.getElementById("avBtn")
 let shareButton = document.getElementById("shareBtn");
-let closeAvButton = document.getElementById("closeAvBtn")
-let closeScreenButton = document.getElementById("closeScreenBtn")
-let accountInputValue = document.getElementById('account');
-let roomInputValue = document.getElementById('room');
+let accountInput = document.getElementById('account');
+let roomInput = document.getElementById('room');
 let remoteScreenDiv = document.querySelector('div#screenDiv');
 let localVideoDiv = document.querySelector('div#videoDiv')
 
@@ -43,12 +40,6 @@ let socketUrl = local_env
 joinButton.addEventListener('click', joinHandler)
 shareButton.addEventListener('click', screenShareHandler)
 avButton.addEventListener('click', avShareHandler);
-closeScreenButton.addEventListener('click', () => {
-    closeShareHandle(SCREEN_SHARE)
-});
-closeAvButton.addEventListener('click', () => {
-    closeShareHandle(AV_SHARE)
-});
 
 /**
  * join事件
@@ -63,7 +54,7 @@ function joinHandler() {
 
     // 创建客户端
     console.log(">>> ", new Date().toLocaleTimeString(), " [初始化]: client ...")
-    client = new Client(accountInputValue.value, roomInputValue.value, socketUrl)
+    client = new Client(accountInput.value, roomInput.value, socketUrl)
     client.toString()
 
     // 创建Socket
@@ -130,13 +121,9 @@ function screenShareHandler() {
 
         // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
         socket.emitScreenShare()
-    }).catch(e => console.log('getUserMedia() error: ', e));
+    }).catch(e => console.log('getDisplayMedia() error: ', e));
 }
 
-function closeScreenStream(){
-
-
-}
 /**
  * 添加本端的video
  * 该方法创建的video输出本端的stream
