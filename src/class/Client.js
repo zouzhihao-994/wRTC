@@ -124,6 +124,22 @@ class Client {
     toString() {
         console.log("account:", this._account, "roomId:", this._roomId, "token:", "socketUrl:", this._socketUrl)
     }
+
+    /**
+     * 清除client的所有数据
+     */
+    clean(){
+        this._account = null;
+        this._roomId = null;
+        this._socketUrl = null
+        this._onlinePeer = {}
+        this._screenSharingPeer = []
+        this._avSharingPeer = []
+        this._localAvStream = null
+        this._remoteAvPC = {}
+        this._localScreenStream = null
+        this._remoteScreenPC = {}
+    }
 }
 
 export {Client}

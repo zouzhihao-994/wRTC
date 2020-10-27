@@ -14,6 +14,7 @@ import {
 
 /**
  * 提供与socket操作相关的接口。
+ * @note 发送消息(emitXXX) 和 接收消息(onXXX)f的接口都定义在这里
  */
 class Socket {
 
@@ -59,8 +60,11 @@ class Socket {
             this.onCloseShare(source, mediaType)
         })
         // 客户端断连
-        this._socketServer.on("disconnected", (data, account) => {
+        this._socketServer.on("disconnected", (account) => {
             this.onDisConnect(data, account)
+        })
+        this._socketServer.on("onLeave", (account) => {
+            this.onLeave(account)
         })
 
     }
@@ -180,7 +184,27 @@ class Socket {
 
         // 如果断连的客户端正在进行屏幕分享,需要清除相关信息
         if (client.existScreenSharingPeer(account)) {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 清除 ", account, " 的信息")
+            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 清除 ", account, " 的共享信息")
+            rtcService.delRemoteScreen(account)
+            removeVideoElement(account + "_" + SCREEN_SHARE)
+        }
+
+        // todo 如果断连的客户端正在进行音视频分享,需要清除相关信息
+
+        client.delOnlinePeer(account)
+    }
+
+    /**
+     * 监听客户端退出房间事件. {@link emitLeaveRoom}
+     * @param account 退出房间的客户端account
+     */
+    onLeave(account) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, " 的 leave 消息")
+
+        // 判断客户端是否正在进行分享
+        // 如果断连的客户端正在进行屏幕分享,需要清除相关信息
+        if (client.existScreenSharingPeer(account)) {
+            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 清除 ", account, " 的共享信息")
             rtcService.delRemoteScreen(account)
             removeVideoElement(account + "_" + SCREEN_SHARE)
         }
@@ -431,6 +455,14 @@ class Socket {
             'dest': account,
             'source': client.account,
             'mediaType': mediaType
+        })
+    }
+
+    emitLeaveRoom() {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: leve 消息到信息服务里,room = ", client.roomId, "}")
+        this._socketServer.emit('leave', {
+            'roomId': client.roomId,
+            'account':client.account
         })
     }
 

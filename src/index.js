@@ -127,6 +127,14 @@ function screenShareHandler() {
 }
 
 /**
+ * 用户退出房间
+ */
+function leaveRoomHandle() {
+    // 发送leave
+    socket.emitLeaveRoom()
+}
+
+/**
  * 添加本端的video
  * 该方法创建的video输出本端的stream
  * @param mediaType 要创建的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
@@ -178,7 +186,7 @@ function createRemoteVideo(account, stream, mediaType) {
  */
 function removeVideoElement(elemId) {
     let elem = document.getElementById(elemId);
-    elem.remove();
+    elem && elem.remove();
 }
 
 export {

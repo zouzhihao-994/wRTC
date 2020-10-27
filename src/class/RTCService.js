@@ -2,6 +2,9 @@
 
 import {client, socket, SCREEN_SHARE, AV_SHARE, iceServer, removeVideoElement, rtcService} from "../index";
 
+/**
+ * 该类主要提供与RTC操作相关的接口
+ */
 class RTCService {
     constructor() {
     }
@@ -99,7 +102,7 @@ class RTCService {
     /**
      * 清除stream,
      * 1.关闭track -> 2.关闭stream -> 3.设置null
-     * @desc 一般用于stream发送方在结束共享时调用此方法清理本地的stream信息
+     * @note 一般用于stream发送方在结束共享时调用此方法清理本地的stream信息
      */
     delScreenStream() {
         client.localScreenStream.getTracks().forEach(track => {
@@ -113,6 +116,7 @@ class RTCService {
     /**
      * 清除source的信息
      * @param account 对端的account
+     * @note 该方法主要提供给共享接收端调用，用于在共享端停止共享后，清除共享端的相关消息
      */
     delRemoteScreen(account) {
         let pc = client.remoteScreen[account]
