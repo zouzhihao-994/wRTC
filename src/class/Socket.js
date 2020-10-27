@@ -66,18 +66,18 @@ class Socket {
      * @param newcomer 发送join消息的客户端，即新加入的客户端
      */
     onJoined(participants, newcomer) {
+        // 针对第一次加入房间的客户端,保存房间所有人。全量保存
         if (Object.keys(client.onlinePeer).length === 0) {
-            // 添加在线peer信息
             for (let idx in participants) {
                 client.addOnlinePeer(participants[idx].account, participants[idx])
                 console.log(">>> ", new Date().toLocaleTimeString(), " [新的peer]: ", client.getOnlinePeer(participants[idx].account))
             }
-        } else {
+        } else { // 增量保存
             client.addOnlinePeer(newcomer.account, newcomer)
             console.log(">>> ", new Date().toLocaleTimeString(), " [新的peer]: ", client.getOnlinePeer(newcomer.account))
         }
 
-        // 发送
+        // 如果本端正在进行视频分享,输出stream给新加入者
         if (client.localAvStream !== null) {
             this.emitAvShareToAccount(newcomer.account)
             rtcService.createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
@@ -98,27 +98,23 @@ class Socket {
             return;
         }
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 Screen Share 消息")
-        // 创建pc
+
         let pc = new RTCPeerConnection(iceServer)
+        client.addRemoteScreenPC(account, pc)
+
         // 设置track监听
         pc.ontrack = (event) => {
             if (event.streams) {
                 this.onTrack(account, event.streams[0], SCREEN_SHARE)
             }
         }
+
         // 设置ice监听
         pc.onicecandidate = (event) => {
             if (event.candidate) {
                 this.emitIceCandidate(event.candidate, account, SCREEN_SHARE)
             }
         }
-        // 设置negotiation监听
-        pc.onnegotiationneeded = () => {
-            rtcService.createOffer(account, pc, client, this, SCREEN_SHARE)
-        }
-        // 保存{peerName:pc}
-        client.addRemoteScreenPC(account, pc)
-
     }
 
     /**
@@ -131,23 +127,21 @@ class Socket {
         }
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, " 的 AV Share 消息")
         let pc = new RTCPeerConnection(iceServer)
+        client.addRemoteAvPC(account, pc)
+
+        // 监听对端的addTrack()事件
         pc.ontrack = (event) => {
             if (event.streams) {
                 this.onTrack(account, event.streams[0], AV_SHARE)
             }
         }
+
         // 设置ice监听
         pc.onicecandidate = (event) => {
             if (event.candidate) {
                 this.emitIceCandidate(event.candidate, account, AV_SHARE)
             }
         }
-        // 设置negotiation监听
-        pc.onnegotiationneeded = () => {
-            rtcService.createOffer(account, pc, client, this, AV_SHARE)
-        }
-        // 保存{peerName:pc}
-        client.addRemoteAvPC(account, pc)
     }
 
     /**
@@ -156,19 +150,19 @@ class Socket {
      * @param mediaType 要关闭的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
     onCloseShare(source, mediaType) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", source, " 的 close ", mediaType, " 消息")
         if (source === client.account) {
             return
         }
 
-        // 删除对应的video
+        // 删除对应的remote video
         removeVideoElement(source + "_" + mediaType)
 
         // 关闭screen pc
         if (mediaType === SCREEN_SHARE) {
-            let pc = client.remoteScreen[source]
-            if (!pc) {return}
-            pc.close()
-            client.delRemoteScreenPC(source)
+            client.remoteScreen[source]
+            && client.remoteScreen[source].close()
+            && client.delRemoteScreenPC(source)
         } else { // 关闭 av pc
 
         }
@@ -197,7 +191,7 @@ class Socket {
                     console.log(">>> ", new Date().toLocaleTimeString(), " [错误]: createAnswer error , ", err)
                 })
             }, (err) => {
-                console.error("setRemoteDescription error:", err);
+                console.log(">>> ", new Date().toLocaleTimeString(), " [错误]: setRemoteDescription error , ", err)
             })
         } else { //音视频形式
             client.remoteAvPC[data.source] && client.remoteAvPC[data.source].setRemoteDescription(data.sdp, () => {
