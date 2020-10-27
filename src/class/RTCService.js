@@ -97,8 +97,9 @@ class RTCService {
     }
 
     /**
-     * 清除stream
+     * 清除stream,
      * 1.关闭track -> 2.关闭stream -> 3.设置null
+     * @desc 一般用于stream发送方在结束共享时调用此方法清理本地的stream信息
      */
     delScreenStream() {
         client.localScreenStream.getTracks().forEach(track => {
@@ -107,6 +108,20 @@ class RTCService {
         })
 
         client.setLocalScreenStream(null)
+    }
+
+    /**
+     * 清除source的信息
+     * @param account 对端的account
+     */
+    delRemoteScreen(account) {
+        let pc = client.remoteScreen[account]
+        pc.ontrack = null
+        pc.onicecandidate = null
+        pc.close()
+        client.delRemoteScreenPC(account)
+
+        client.delScreenSharingPeer(account)
     }
 
 }

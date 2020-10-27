@@ -54,8 +54,13 @@ class Socket {
         this._socketServer.on("avShared", (account) => {
             this.onAvShared(account)
         })
+        // 客户端停止共享
         this._socketServer.on("onCloseShare", (source, mediaType) => {
             this.onCloseShare(source, mediaType)
+        })
+        // 客户端断连
+        this._socketServer.on("disconnected", (data, account) => {
+            this.onDisConnect(data, account)
         })
 
     }
@@ -101,6 +106,7 @@ class Socket {
 
         let pc = new RTCPeerConnection(iceServer)
         client.addRemoteScreenPC(account, pc)
+        client.addScreenSharingPeer(account)
 
         // 设置track监听
         pc.ontrack = (event) => {
@@ -135,7 +141,6 @@ class Socket {
                 this.onTrack(account, event.streams[0], AV_SHARE)
             }
         }
-
         // 设置ice监听
         pc.onicecandidate = (event) => {
             if (event.candidate) {
@@ -160,15 +165,31 @@ class Socket {
 
         // 移除对端的连接信息
         if (mediaType === SCREEN_SHARE) {
-            let pc = client.remoteScreen[source]
-            pc.ontrack = null
-            pc.onicecandidate = null
-            pc.close()
-            client.delRemoteScreenPC(source)
+            rtcService.delRemoteScreen(source)
         } else { // 关闭 av pc
 
         }
     }
+
+    /**
+     * 监听客户端离开事件
+     * @param account 消息发送方account，即断连的客户端
+     */
+    onDisConnect(account) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, " 的 disConnect 消息")
+
+        // 如果断连的客户端正在进行屏幕分享,需要清除相关信息
+        if (client.existScreenSharingPeer(account)) {
+            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 清除 ", account, " 的信息")
+            rtcService.delRemoteScreen(account)
+            removeVideoElement(account + "_" + SCREEN_SHARE)
+        }
+
+        // todo 如果断连的客户端正在进行音视频分享,需要清除相关信息
+
+        client.delOnlinePeer(account)
+    }
+
 
     /**
      * 监听offer消息
@@ -214,7 +235,7 @@ class Socket {
      */
     onAnswer(data) {
         if (data.source === client.account) {
-            return;
+            return false;
         }
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, "的 answer 消息")
         // 屏幕共享模式
@@ -243,6 +264,7 @@ class Socket {
                 console.error('setRemoteDescription error:', err, data.source);
             })
         }
+        return true
     }
 
     /**

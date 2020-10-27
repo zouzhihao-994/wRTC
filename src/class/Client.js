@@ -13,6 +13,11 @@ class Client {
 
         // 当前房间的在线客户端信息 {K:account,V:clientInfo}
         this._onlinePeer = {}
+        // 当前正在进行屏幕分享的客户端的account
+        this._screenSharingPeer = []
+        // 当前正在进行音视频分享的客户端的account
+        this._avSharingPeer = []
+
 
         // ---------------remote av--------------------
         // 本地音视频流
@@ -27,6 +32,34 @@ class Client {
         this._remoteScreenPC = {}
     }
 
+    /**
+     * 添加正在分享的客户端
+     * @param account 要添加的正在分享的客户端
+     * @api 在收到 {@link onScreenShared} 消息时候，或者本端发起分享的时候调用
+     */
+    addScreenSharingPeer(account) {
+        this._screenSharingPeer.push(account);
+    }
+
+    /**
+     * 判断account是否是正在分享的客户端
+     * @param account 要判断的客户端account
+     * @return boolean true:是，false:不是
+     */
+    existScreenSharingPeer(account) {
+        return this._screenSharingPeer.includes(account)
+    }
+
+    /**
+     * 移除正在分享的客户端
+     * @param account 要删除的account
+     * @api 在收到 {@link onCloseShare} 消息时要移除对端，在收到 {@link onDisConnect} 消息时候，
+     *      通过 {@link existScreenSharingPeer} 判断是否需要删除
+     */
+    delScreenSharingPeer(account) {
+        let idx = this._screenSharingPeer.indexOf(account)
+        this._screenSharingPeer.splice(idx, 1);
+    }
 
     get localAvStream() {
         return this._localAvStream;
@@ -38,6 +71,10 @@ class Client {
 
     getOnlinePeer(peerName) {
         return this._onlinePeer[peerName];
+    }
+
+    delOnlinePeer(peerName) {
+        delete this._onlinePeer[peerName];
     }
 
     get onlinePeer() {

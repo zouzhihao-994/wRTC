@@ -110,6 +110,10 @@ function screenShareHandler() {
         // 设置流
         client.setLocalScreenStream(stream)
         createLocalVideo(SCREEN_SHARE)
+        client.addScreenSharingPeer(client.account)
+
+        // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
+        socket.emitScreenShare()
 
         for (let peerName in client.onlinePeer) {
             if (peerName === client.account) {
@@ -119,8 +123,6 @@ function screenShareHandler() {
             rtcService.createPCAndAddTrack(peerName, stream, SCREEN_SHARE)
         }
 
-        // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
-        socket.emitScreenShare()
     }).catch(e => console.log('getDisplayMedia() error: ', e));
 }
 
