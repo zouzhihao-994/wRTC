@@ -190,7 +190,11 @@ class Socket {
                 client.remoteScreen[data.source].createAnswer().then((desc) => {
                     client.remoteScreen[data.source].setLocalDescription(desc, () => {
                         this.emitAnswer(data.source, client.roomId, client.remoteScreen[data.source].localDescription, SCREEN_SHARE)
+                    }, (err) => {
+                        console.log(">>> ", new Date().toLocaleTimeString(), " [错误]: setLocalDescription error , ", err)
                     })
+                }, (err) => {
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [错误]: createAnswer error , ", err)
                 })
             }, (err) => {
                 console.error("setRemoteDescription error:", err);
