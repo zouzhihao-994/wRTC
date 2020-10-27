@@ -1,6 +1,7 @@
 'use strict';
 
-import {client, socket, SCREEN_SHARE, AV_SHARE, iceServer, removeVideoElement, rtcService} from "../index";
+import {client, socket, removeVideoElement, rtcService} from "../index";
+import {SCREEN_SHARE, AV_SHARE, iceServer} from "../const"
 
 /**
  * 该类主要提供与RTC操作相关的接口

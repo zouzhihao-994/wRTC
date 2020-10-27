@@ -1,16 +1,8 @@
 'use strict';
 
 import io from 'socket.io-client';
-import {
-    iceServer,
-    rtcService,
-    SCREEN_SHARE,
-    AV_SHARE,
-    client,
-    socket,
-    createRemoteVideo,
-    removeVideoElement
-} from "../index";
+import {rtcService, client, socket, createRemoteVideo, removeVideoElement} from "../index";
+import {SCREEN_SHARE, AV_SHARE, iceServer} from "../const"
 
 /**
  * 提供与socket操作相关的接口。
@@ -61,7 +53,7 @@ class Socket {
         })
         // 客户端断连
         this._socketServer.on("disconnected", (account) => {
-            this.onDisConnect(data, account)
+            this.onDisConnect(account)
         })
         this._socketServer.on("onLeave", (account) => {
             this.onLeave(account)
@@ -462,7 +454,7 @@ class Socket {
         console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: leve 消息到信息服务里,room = ", client.roomId, "}")
         this._socketServer.emit('leave', {
             'roomId': client.roomId,
-            'account':client.account
+            'account': client.account
         })
     }
 

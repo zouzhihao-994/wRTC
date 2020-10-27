@@ -3,22 +3,13 @@
 import {Client} from "./class/Client";
 import {Socket} from "./class/Socket";
 import {RTCService} from "./class/RTCService";
-
-const SCREEN_SHARE = "screen_share"
-const AV_SHARE = "av_share"
-
-const iceServer = {
-    "iceServers": [{
-        'urls': 'turn:119.23.33.178:3478',
-        'username': 'leung',
-        'credential': '362203'
-    }]
-}
+import {SCREEN_SHARE, AV_SHARE, socketUrl} from "./const"
 
 // 绑定元素
 let joinButton = document.getElementById("joinBtn")
 let avButton = document.getElementById("avBtn")
 let shareButton = document.getElementById("shareBtn");
+let exitButton = document.getElementById("leaveBtn")
 let accountInput = document.getElementById('account');
 let roomInput = document.getElementById('room');
 let remoteScreenDiv = document.querySelector('div#screenDiv');
@@ -29,17 +20,11 @@ let client;
 let socket;
 let rtcService;
 
-// 本地环境
-let local_env = "ws://127.0.0.1:9944"
-// 测试环境
-let test_env = "https://tools-socket.test.maxhub.vip"
-// 在这里切换url环境
-let socketUrl = local_env
-
 // 绑定事件
 joinButton.addEventListener('click', joinHandler)
 shareButton.addEventListener('click', screenShareHandler)
 avButton.addEventListener('click', avShareHandler);
+exitButton.addEventListener('click', leaveRoomHandle);
 
 /**
  * join事件
@@ -48,10 +33,6 @@ avButton.addEventListener('click', avShareHandler);
  * socket {@class Socket}
  */
 function joinHandler() {
-    joinButton.display = true
-    shareButton.display = false
-    avButton.display = false
-
     // 创建客户端
     console.log(">>> ", new Date().toLocaleTimeString(), " [初始化]: client ...")
     client = new Client(accountInput.value, roomInput.value, socketUrl)
@@ -193,10 +174,7 @@ export {
     client,
     socket,
     rtcService,
-    iceServer,
     remoteScreenDiv,
-    SCREEN_SHARE,
-    AV_SHARE,
     createRemoteVideo,
     removeVideoElement
 }

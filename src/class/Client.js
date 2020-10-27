@@ -18,7 +18,6 @@ class Client {
         // 当前正在进行音视频分享的客户端的account
         this._avSharingPeer = []
 
-
         // ---------------remote av--------------------
         // 本地音视频流
         this._localAvStream = null
