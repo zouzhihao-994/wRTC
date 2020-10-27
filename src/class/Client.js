@@ -19,15 +19,12 @@ class Client {
         this._localAvStream = null
         // 用于存储视频流的对端,K:account. V:peer pc
         this._remoteAvPC = {}
-        this._remoteAvStream = {}
 
         // ---------------remote screen--------------------
         // 存储本地屏幕流
         this._localScreenStream = null
         // 用于存储屏幕共享的对端，K:account,V:对端的pc
         this._remoteScreenPC = {}
-        // 用于存储对端的stream, K:account. V:peer stream
-        this._remoteScreenStream = {}
     }
 
 
@@ -59,8 +56,8 @@ class Client {
         this._remoteScreenPC[remoteScreenName] = peer
     }
 
-    addPeerStream(account, stream) {
-        this._remoteScreenStream[account] = stream;
+    delRemoteScreenPC(account){
+        this._remoteScreenPC.delete(account);
     }
 
     addRemoteAvPC(peerName, pc) {
