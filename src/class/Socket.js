@@ -458,6 +458,10 @@ class Socket {
         })
     }
 
+    clean(){
+        this._socketServer = null
+    }
+
     toString() {
         console.log("socket: " + this._socketServer, "client: " + client);
     }

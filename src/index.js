@@ -113,6 +113,8 @@ function screenShareHandler() {
 function leaveRoomHandle() {
     // 发送leave
     socket.emitLeaveRoom()
+    client.clean()
+    socket.clean()
 }
 
 /**
