@@ -194,6 +194,10 @@ class Socket {
     /**
      * 监听offer消息
      * @param data 包含四个字段，
+     *  1.source:发送端的account.
+     *  2.dest：接收端的account，即本客户端.
+     *  3.sdp：发送端的localDescription.
+     *  4.mediaType:要进行的共享的媒体类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
     onOffer(data) {
         if (data.source === client.account) {
@@ -231,7 +235,11 @@ class Socket {
 
     /**
      * 监听answer消息
-     * @param data
+     * @param data 包含四个字段，
+     *  1.source:发送端的account.
+     *  2.dest：接收端的account，即本客户端.
+     *  3.sdp：发送端的localDescription.
+     *  4.mediaType:要进行的共享的媒体类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
     onAnswer(data) {
         if (data.source === client.account) {
@@ -423,20 +431,6 @@ class Socket {
             'dest': account,
             'source': client.account,
             'mediaType': mediaType
-        })
-    }
-
-    /**
-     * 发送update state消息
-     * @param state
-     * @param account
-     */
-    emitUpdateState(state, account) {
-        this._socketServer.emit('updateClientState', {
-            reqAccount: account,
-            targetAccount: state.account,
-            type: state.type,
-            value: state.value
         })
     }
 
