@@ -139,12 +139,11 @@ function screenShareHandler() {
  */
 function closeShareHandle(mediaType) {
 
-    // 初始化screen stream
+    // 停止track
     if (mediaType === AV_SHARE) {
-        this.localAvStream.stop()
-        client.setLocalAvStream(null)
+        rtcService.stopScreenTracks()
     } else {
-        client.setLocalScreenStream(null)
+        rtcService.stopAvTracks()
     }
 
     // 发送closeScreenShare消息给所有收听者
@@ -157,6 +156,8 @@ function closeShareHandle(mediaType) {
 
 /**
  * 添加本端的video
+ * 该方法创建的video输出本端的stream
+ * @param mediaType 要创建的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
  */
 function createLocalVideo(mediaType) {
     console.log(">>> ", new Date().toLocaleTimeString(), " [创建]: 本地video，输出:", mediaType)
@@ -178,12 +179,13 @@ function createLocalVideo(mediaType) {
 
 /**
  * 创建一个video并输出
+ * 该方法创建的video输出其他端的stream
  * @note video的id为 {account}_{mediaType},例如 "靓仔_screen_share"
  * @param account 对端的account
  * @param stream 对端的stream
  * @param mediaType 要创建的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
  */
-function createVideoOutputStream(account, stream, mediaType) {
+function createRemoteVideo(account, stream, mediaType) {
     let video = document.createElement("video")
     remoteScreenDiv.appendChild(video)
 
@@ -192,13 +194,15 @@ function createVideoOutputStream(account, stream, mediaType) {
     video.setAttribute("height", "300");
     video.setAttribute("autoplay", "");
     video.setAttribute("controls", "");
+
     video.srcObject = stream
 }
 
 /**
- * 获取video组件
+ * 移除video组件
  * @param elemId 要关闭的video元素的id
- * @see createVideoOutputStream
+ * @see createRemoteVideo
+ * @see createLocalVideo
  */
 function removeVideoElement(elemId) {
     let elem = document.getElementById(elemId);
@@ -213,7 +217,7 @@ export {
     remoteScreenDiv,
     SCREEN_SHARE,
     AV_SHARE,
-    createVideoOutputStream,
+    createRemoteVideo,
     removeVideoElement
 }
 

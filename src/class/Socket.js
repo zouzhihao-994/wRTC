@@ -8,7 +8,7 @@ import {
     AV_SHARE,
     client,
     socket,
-    createVideoOutputStream,
+    createRemoteVideo,
     removeVideoElement
 } from "../index";
 
@@ -159,9 +159,19 @@ class Socket {
         if (source === client.account) {
             return
         }
+
         // 删除对应的video
         removeVideoElement(source + "_" + mediaType)
-        // 删除对端的消息
+
+        // 关闭screen pc
+        if (mediaType === SCREEN_SHARE) {
+            let pc = client.remoteScreen[source]
+            if (!pc) {return}
+            pc.close()
+            client.delRemoteScreenPC(source)
+        } else { // 关闭 av pc
+
+        }
     }
 
     /**
@@ -248,7 +258,7 @@ class Socket {
         //todo screenTrack.onmute = ;
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 track")
         try {
-            createVideoOutputStream(account, screenStream, mediaType)
+            createRemoteVideo(account, screenStream, mediaType)
         } catch (e) {
             console.error('[Caller error] onRemoteScreenStream', e)
         }

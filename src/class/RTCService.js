@@ -2,7 +2,7 @@
 
 import {client, socket, SCREEN_SHARE, AV_SHARE, iceServer} from "../index";
 
-class RTCService{
+class RTCService {
     constructor() {
     }
 
@@ -47,17 +47,12 @@ class RTCService{
             client.addRemoteScreenPC(account, pc)
         }
 
-        // 设置track监听
-        pc.ontrack = (event) => {
-            if (event.streams) {
-                socket.onTrack(account, event.streams[0],mediaType)
-            }
-        }
         // 设置negotiation监听
         pc.onnegotiationneeded = () => {
             console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 negotiationneeded 消息")
             this.createOfferHandle(account, pc, mediaType)
         }
+
         // 输出track
         try {
             stream.getTracks().forEach(track => {
@@ -69,6 +64,23 @@ class RTCService{
             console.error('share getDisplayMedia addTrack error', e);
         }
     }
+
+    stopScreenTracks() {
+        if (!client.localScreenStream) {
+            console.log(">>> ", new Date().toLocaleTimeString(), " [无效]: 当前没有进行 Screen 分享,无法关闭")
+        }
+        // 关闭track
+        client.localScreenStream.getTracks().forEach(track => {
+            track.stop()
+        })
+        // 设置null
+        client.setLocalScreenStream(null)
+    }
+
+    stopAvTracks() {
+
+    }
+
 }
 
 export {RTCService}
