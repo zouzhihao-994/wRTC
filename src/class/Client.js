@@ -56,8 +56,8 @@ class Client {
         this._remoteScreenPC[remoteScreenName] = peer
     }
 
-    delRemoteScreenPC(account){
-        this._remoteScreenPC.delete(account);
+    delRemoteScreenPC(account) {
+        delete this._remoteScreenPC[account]
     }
 
     addRemoteAvPC(peerName, pc) {
