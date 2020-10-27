@@ -10,7 +10,7 @@ const AV_SHARE = "av_share"
 
 const iceServer = {
     "iceServers": [{
-        'url': 'turn:119.23.33.178:3478',
+        'urls': 'turn:119.23.33.178:3478',
         'username': 'leung',
         'credential': '362203'
     }]
@@ -133,27 +133,10 @@ function screenShareHandler() {
     }).catch(e => console.log('getUserMedia() error: ', e));
 }
 
-/**
- * 本端关闭分享
- * @param mediaType 要关闭分享的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
- */
-function closeShareHandle(mediaType) {
+function closeScreenStream(){
 
-    // 停止track
-    if (mediaType === AV_SHARE) {
-        rtcService.stopScreenTracks()
-    } else {
-        rtcService.stopAvTracks()
-    }
 
-    // 发送closeScreenShare消息给所有收听者
-    socket.emitCloseShare(mediaType)
-
-    // 删除local video
-    removeVideoElement(mediaType)
 }
-
-
 /**
  * 添加本端的video
  * 该方法创建的video输出本端的stream
