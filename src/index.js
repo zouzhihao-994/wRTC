@@ -1,6 +1,6 @@
 'use strict';
 
-import {SCREEN_SHARE, AV_SHARE, socketUrl} from "./const"
+import {SCREEN_SHARE, AV_SHARE, socketUrl, iceServer} from "./const"
 import {Client} from "./class/Client";
 import {Socket} from "./class/Socket";
 import {RTCService} from "./service/RTCService";

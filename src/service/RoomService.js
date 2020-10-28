@@ -26,11 +26,15 @@ class RoomService {
             if (stream === undefined || stream === null) {
                 return reject("stream is null")
             }
-            if (mediaType !== SCREEN_SHARE && mediaType !== AV_SHARE) {
+
+            if(mediaType === SCREEN_SHARE){
+                client.setLocalScreenStream(stream)
+            }else if(mediaType === AV_SHARE){
+                client.setLocalAvStream(stream)
+            }else{
                 return reject("mediaType is not SCREEN_SHARE or AV_SHARE")
             }
 
-            client.setLocalAvStream(stream)
             // createLocalVideo(AV_SHARE)
             for (let peerName in client.onlinePeer) {
                 if (peerName === client.account) {
@@ -41,7 +45,7 @@ class RoomService {
             }
 
             // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
-            socket.emitAvShare()
+            socket.emitScreenShare()
             resolve()
         })
     }

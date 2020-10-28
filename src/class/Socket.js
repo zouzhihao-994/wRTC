@@ -1,9 +1,18 @@
 'use strict';
 
 import io from 'socket.io-client';
-import {rtcService, client, socket, clientService, createRemoteVideo, removeVideoElement} from "../index";
-import {SCREEN_SHARE, AV_SHARE, iceServer} from "../const"
-import {callback} from "../callback";
+import {
+    rtcService,
+    client,
+    socket,
+    clientService,
+    createRemoteVideo,
+    removeVideoElement,
+    SCREEN_SHARE,
+    AV_SHARE,
+    iceServer,
+    callback
+} from "../index";
 
 /**
  * 提供与socket操作相关的接口。
@@ -83,7 +92,7 @@ class Socket {
         }
 
         if (newcomer.account !== client.account) {
-            callback.onJoin && callback.onJoin(newcomer.account)
+            callback.onJoin(newcomer.account)
         }
 
     }
@@ -302,8 +311,6 @@ class Socket {
         if (account === client.account) {
             return
         }
-        //let screenTrack = screenStream.getTracks()[0]
-        //todo screenTrack.onmute = ;
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 track")
         try {
             createRemoteVideo(account, screenStream, mediaType)
