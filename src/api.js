@@ -100,14 +100,14 @@ class RtcApi {
      * 订阅远端流
      */
     subscribe() {
-
+        client.setIsSubscribeScreen(true)
     }
 
     /**
      * 取消订阅远端流
      */
     unSubscribe() {
-
+        client.setIsSubscribeScreen(false)
     }
 
     /**
