@@ -4,7 +4,14 @@
 import {client} from "./index";
 
 let callback = {
-    onJoin: null,
+
+    /**
+     * 房间有新人加入
+     * @param account
+     */
+    onJoin: function (account) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onJoin, account = ", account)
+    },
 
     /**
      * 房间里其他人发布本地流时
@@ -19,7 +26,7 @@ let callback = {
      * @return account 取消者的account
      */
     onUnPublisher: function (account) {
-        console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onUnPublisher, account = {},stream = {}", account, stream)
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onUnPublisher, account = {}", account)
     },
 
     /**
