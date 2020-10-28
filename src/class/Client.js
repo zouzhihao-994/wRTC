@@ -6,10 +6,17 @@
  * 同时也保存和对端相关的数据。
  */
 class Client {
-    constructor(account, roomId, url) {
-        this._account = account;
-        this._roomId = roomId;
+
+    /**
+     * @param account 客户端account
+     * @param token 鉴权使用,暂时没有使用
+     * @param url socket.io服务器 url
+     */
+    constructor(account, token, url) {
+        this._account = account
+        this._roomId = null
         this._socketUrl = url
+        this._token = token
 
         // 当前房间的在线客户端信息 {K:account,V:clientInfo}
         this._onlinePeer = {}
@@ -29,6 +36,14 @@ class Client {
         this._localScreenStream = null
         // 用于存储屏幕共享的对端，K:account,V:对端的pc
         this._remoteScreenPC = {}
+    }
+
+    get token() {
+        return this._token;
+    }
+
+    setToken(value) {
+        this._token = value;
     }
 
     /**
@@ -120,6 +135,10 @@ class Client {
         return this._roomId;
     }
 
+    setRoomId(id){
+        this._roomId = id
+    }
+
     toString() {
         console.log("account:", this._account, "roomId:", this._roomId, "token:", "socketUrl:", this._socketUrl)
     }
@@ -127,7 +146,7 @@ class Client {
     /**
      * 清除client的所有数据
      */
-    clean(){
+    clean() {
         this._account = null;
         this._roomId = null;
         this._socketUrl = null
