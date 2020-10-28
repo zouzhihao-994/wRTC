@@ -68,23 +68,24 @@ class Socket {
      * @param newcomer 发送join消息的客户端，即新加入的客户端
      */
     onJoined(participants, newcomer) {
+
         // 更新在线客户端信息
         clientService.updateOnlinePeerList(participants, newcomer)
 
         // 如果本端正在进行视频分享,输出stream给新加入者
         if (client.localAvStream !== null) {
-            this.emitAvShareToAccount(newcomer.account).then(() => {
-                    rtcService.createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
-                }
-            )
+            this.emitAvShareToAccount(newcomer.account)
+            rtcService.createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
         }
         if (client.localScreenStream !== null) {
             this.emitScreenShareToAccount(newcomer.account)
             rtcService.createPCAndAddTrack(newcomer.account, client.localScreenStream, SCREEN_SHARE)
         }
 
-        // 回调
-        callback.onJoin && callback.onJoin(newcomer.account)
+        if (newcomer.account !== client.account) {
+            callback.onJoin && callback.onJoin(newcomer.account)
+        }
+
     }
 
     /**
@@ -96,6 +97,7 @@ class Socket {
         if (account === client.account) {
             return;
         }
+
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 Screen Share 消息")
 
         let pc = new RTCPeerConnection(iceServer)
@@ -105,7 +107,9 @@ class Socket {
         // 设置track监听
         pc.ontrack = (event) => {
             if (event.streams) {
-                this.onTrack(account, event.streams[0], SCREEN_SHARE)
+                // 发送回调
+                callback.onScreenStream(account, event.streams[0])
+                // this.onTrack(account, event.streams[0], SCREEN_SHARE)
             }
         }
 
@@ -389,9 +393,6 @@ class Socket {
         this._socketServer.emit('avShareToAccount', {
             'dest': dest,
             'source': client.account
-        })
-        return new Promise((resolve, reject) => {
-            return resolve
         })
     }
 
