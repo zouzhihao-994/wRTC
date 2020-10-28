@@ -1,8 +1,9 @@
 'use strict'
 
-// 回调函数
-import {client} from "./index";
-
+/**
+ * 需要监听使用哪一个回调能力，覆写对应的方法即可
+ * 默认方法都为日志打印
+ */
 let callback = {
 
     /**

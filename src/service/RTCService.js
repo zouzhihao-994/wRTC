@@ -46,8 +46,8 @@ class RTCService {
     }
 
     /**
-     * 和对端进行建立连接，然后输出本端的stream给对端
-     * 具体的流程为：1.创建pc -> 2.connection设置track监听 -> 3.设置ice监听 -> 4.设置onnegotiationneeded监听 -> 5.输出本端的流到pc中
+     * 创建一个peerConnection，然后输出向connection 中添加 stream
+     * 具体的流程为：1.创建pc -> 2.connection设置track监听 -> 3.设置onnegotiationneeded监听 -> 4.输出本端的流到pc中
      * @param account 对端的account
      * @param stream 要输出的流
      * @param mediaType 视频的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
@@ -78,16 +78,18 @@ class RTCService {
                 // 设置停止共享监听
                 track.onended = event => {
                     console.log(">>> ", new Date().toLocaleTimeString(), " [info]: ", account, "的 Close Screen Share 消息")
-                    rtcService.closeShare(mediaType)
+                    // rtcService.closeShare(mediaType)
                     console.log(">>> ", new Date().toLocaleTimeString(), " [info]: event = ", event)
+                    // todo 执行回调函数
                 }
                 // 添加远端
                 pc.addTrack(track, stream)
             })
         } catch (e) {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [error] get stream's track fail . ", e)
+            console.log(">>> ", new Date().toLocaleTimeString(), " [error] get stream's track fail,error =", e)
         }
     }
+
 
     /**
      * 本端关闭分享

@@ -32,7 +32,7 @@ let remoteScreenDiv = document.querySelector('div#screenDiv');
 let localVideoDiv = document.querySelector('div#videoDiv')
 
 // 绑定事件
-initButton.addEventListener('click', () => init({account: accountInput.value, token: null, socketUrl: socketUrl}));
+initButton.addEventListener('click', () => api.init({account: accountInput.value, token: null, socketUrl: socketUrl}));
 joinButton.addEventListener('click', () => api.joinRoom(roomInput.value))
 getScreenButton.addEventListener('click', () => api.getScreenStream().then(stream => {
     client.setLocalScreenStream(stream)
@@ -41,6 +41,12 @@ getScreenButton.addEventListener('click', () => api.getScreenStream().then(strea
     console.log(">>> ", new Date().toLocaleTimeString(), " [info]: get screen stream fail ", err)
 }))
 
+shareButton.addEventListener('click', () => api.subscribeScreen(client.localScreenStream).then(() => {
+        createLocalVideo(SCREEN_SHARE)
+    }).catch(err => {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [error]: get screen stream fail ", err)
+    })
+);
 
 
 // avButton.addEventListener('click', );
@@ -106,9 +112,10 @@ function leaveRoomHandle() {
 }
 
 /**
- * 添加本端的video
+ * 自动添加video组件,然后输出stream
  * 该方法创建的video输出本端的stream
  * @param mediaType 要创建的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
+ * @note 自测时使用
  */
 function createLocalVideo(mediaType) {
     console.log(">>> ", new Date().toLocaleTimeString(), " [创建]: 本地video，输出:", mediaType)

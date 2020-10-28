@@ -1,6 +1,10 @@
 'use strict'
-import {client, rtcService, socket, roomService, init} from "./index"
+import {client, rtcService, socket, roomService, init, SCREEN_SHARE} from "./index"
 
+/**
+ * sdk 对外提供接口的整合类
+ * 对外提供的所有能力都在这个类下
+ */
 class RtcApi {
 
     constructor() {
@@ -29,17 +33,7 @@ class RtcApi {
      * @returns {Promise<>} resolve:桌面的流.reject:错误信息
      */
     getScreenStream() {
-        return new Promise((resolve, reject) => {
-            rtcService.getScreenStream().then(
-                stream => {
-                    return resolve(stream)
-                }
-            ).catch(
-                error => {
-                    return reject(error)
-                }
-            )
-        })
+        return rtcService.getScreenStream()
     }
 
 
@@ -60,10 +54,10 @@ class RtcApi {
     }
 
     /**
-     * 发布屏幕流到房间
+     * 推送屏幕流到到房间
      */
-    shareScreen() {
-        shareService
+    subscribeScreen(screenStream) {
+        return roomService.subscribeStream(screenStream, SCREEN_SHARE)
     }
 
     shareVideo() {
@@ -133,7 +127,9 @@ class RtcApi {
     }
 }
 
-export {RtcApi}
+export {
+    RtcApi
+}
 
 
 
