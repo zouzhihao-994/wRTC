@@ -1,7 +1,9 @@
+// 前缀
 const SCREEN_SHARE = "screen_share"
 const AV_SHARE = "av_share"
 
-const iceServer = {
+// ice服务器
+let iceServer = {
     "iceServers": [{
         'urls': 'turn:119.23.33.178:3478',
         'username': 'leung',
