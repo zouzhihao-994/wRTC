@@ -25,6 +25,25 @@ class RtcApi {
     }
 
     /**
+     * 获取桌面流
+     * @returns {Promise<>} resolve:桌面的流.reject:错误信息
+     */
+    getScreenStream() {
+        return new Promise((resolve, reject) => {
+            rtcService.getScreenStream().then(
+                stream => {
+                    return resolve(stream)
+                }
+            ).catch(
+                error => {
+                    return reject(error)
+                }
+            )
+        })
+    }
+
+
+    /**
      * 离开房间
      */
     leaveRoom(account, roomId) {
@@ -41,30 +60,17 @@ class RtcApi {
     }
 
     /**
-     * 设置是否允许发布音频流
+     * 发布屏幕流到房间
      */
-    configLocalAudioPublish() {
+    shareScreen() {
+        shareService
+    }
+
+    shareVideo() {
 
     }
 
-    /**
-     * 设置是否允许发布视频流
-     */
-    configLocalCameraPublish() {
-
-    }
-
-    /**
-     * 设置是否允许发布屏幕共享流
-     */
-    configLocalScreenPublish() {
-
-    }
-
-    /**
-     * 发布本地流
-     */
-    publish() {
+    shareAudio() {
 
     }
 

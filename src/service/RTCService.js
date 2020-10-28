@@ -11,6 +11,20 @@ class RTCService {
     }
 
     /**
+     * 获取桌面流
+     * @returns {Promise<>} resolve:桌面的流.reject:错误信息
+     */
+    getScreenStream() {
+        return new Promise((resolve, reject) => {
+            navigator.mediaDevices.getDisplayMedia().then(stream => {
+                return resolve(stream)
+            }).catch(e => {
+                return reject("getDisplayMedia fail. ", e)
+            })
+        })
+    }
+
+    /**
      * 创建OFFER
      *
      * @param account 对端的account
@@ -44,34 +58,34 @@ class RTCService {
 
         // 保存account和pc的映射关系
         if (mediaType === AV_SHARE) {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [保存]: 保存 AV PC , account: ", account)
+            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 保存 AV PC , account: ", account)
             client.addRemoteAvPC(account, pc);
         } else {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [保存]: 保存 Screen PC , account: ", account)
+            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 保存 Screen PC , account: ", account)
             client.addRemoteScreenPC(account, pc)
         }
 
         // 设置negotiation监听
         pc.onnegotiationneeded = () => {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 negotiationneeded 消息")
+            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: ", account, "的 negotiationneeded 消息")
             this.createOfferHandle(account, pc, mediaType)
         }
 
         // 输出track
         try {
             stream.getTracks().forEach(track => {
-                console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: track 给", account)
+                console.log(">>> ", new Date().toLocaleTimeString(), " [info]: track 给", account)
                 // 设置停止共享监听
                 track.onended = event => {
-                    console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 Close Screen Share 消息")
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [info]: ", account, "的 Close Screen Share 消息")
                     rtcService.closeShare(mediaType)
-                    console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: event = ", event)
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [info]: event = ", event)
                 }
                 // 添加远端
                 pc.addTrack(track, stream)
             })
         } catch (e) {
-            console.error('share getDisplayMedia addTrack error', e);
+            console.log(">>> ", new Date().toLocaleTimeString(), " [error] get stream's track fail . ", e)
         }
     }
 

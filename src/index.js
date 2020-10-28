@@ -8,6 +8,7 @@ import {RoomService} from "./service/RoomService";
 import {ShareService} from "./service/ShareService";
 import {ClientService} from "./service/ClientService";
 import {callback} from "./callback"
+import {RtcApi} from "./api";
 
 let client;
 let socket;
@@ -16,9 +17,12 @@ let roomService;
 let shareService;
 let clientService;
 
+let api = new RtcApi()
+
 // 绑定元素
 let initButton = document.getElementById("initBtn")
 let joinButton = document.getElementById("joinBtn")
+let getScreenButton = document.getElementById('getScreenBtn');
 let avButton = document.getElementById("avBtn")
 let shareButton = document.getElementById("shareBtn");
 let exitButton = document.getElementById("leaveBtn")
@@ -29,8 +33,16 @@ let localVideoDiv = document.querySelector('div#videoDiv')
 
 // 绑定事件
 initButton.addEventListener('click', () => init({account: accountInput.value, token: null, socketUrl: socketUrl}));
-joinButton.addEventListener('click', () => roomService.join(roomInput.value))
-// shareButton.addEventListener('click', )
+joinButton.addEventListener('click', () => api.joinRoom(roomInput.value))
+getScreenButton.addEventListener('click', () => api.getScreenStream().then(stream => {
+    client.setLocalScreenStream(stream)
+    console.log(">>> ", new Date().toLocaleTimeString(), " [info]: get screen stream success ", stream)
+}).catch(err => {
+    console.log(">>> ", new Date().toLocaleTimeString(), " [info]: get screen stream fail ", err)
+}))
+
+
+
 // avButton.addEventListener('click', );
 // exitButton.addEventListener('click', );
 
@@ -81,37 +93,6 @@ function avShareHandler() {
     }).catch(e => {
         console.error('av share getDisplayMedia addTrack error', e);
     })
-}
-
-/**
- * 进行桌面共享
- */
-function screenShareHandler() {
-    if (client.localScreenStream) {
-        console.log("检测到本地存在screen流,无法再创建")
-        return;
-    }
-
-    // 新建screen流
-    // 获取桌面,同时设置本地stream和video为stream
-    navigator.mediaDevices.getDisplayMedia().then(stream => {
-        // 设置流
-        client.setLocalScreenStream(stream)
-        createLocalVideo(SCREEN_SHARE)
-        client.addScreenSharingPeer(client.account)
-
-        // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
-        socket.emitScreenShare()
-
-        for (let peerName in client.onlinePeer) {
-            if (peerName === client.account) {
-                continue
-            }
-            // 创建对端pc，设置回调函数，添加track
-            rtcService.createPCAndAddTrack(peerName, stream, SCREEN_SHARE)
-        }
-
-    }).catch(e => console.log('getDisplayMedia() error: ', e));
 }
 
 /**
@@ -184,6 +165,7 @@ export {
     socket,
     rtcService,
     callback,
+    shareService,
     clientService,
     roomService,
     SCREEN_SHARE,
