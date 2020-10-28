@@ -18,6 +18,9 @@ class Client {
         this._socketUrl = url
         this._token = token
 
+        // 是否接收远端屏幕流
+        this._issubscribeScreen = true
+
         // 当前房间的在线客户端信息 {K:account,V:clientInfo}
         this._onlinePeer = {}
         // 当前正在进行屏幕分享的客户端的account
@@ -135,7 +138,7 @@ class Client {
         return this._roomId;
     }
 
-    setRoomId(id){
+    setRoomId(id) {
         this._roomId = id
     }
 

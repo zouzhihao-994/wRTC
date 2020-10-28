@@ -31,26 +31,32 @@ let roomInput = document.getElementById('room');
 let remoteScreenDiv = document.querySelector('div#screenDiv');
 let localVideoDiv = document.querySelector('div#videoDiv')
 
+
+let tmpStream
 // 绑定事件
 initButton.addEventListener('click', () => api.init({account: accountInput.value, token: null, socketUrl: socketUrl}));
 joinButton.addEventListener('click', () => api.joinRoom(roomInput.value))
 getScreenButton.addEventListener('click', () => api.getScreenStream().then(stream => {
-    client.setLocalScreenStream(stream)
+    tmpStream = stream
     console.log(">>> ", new Date().toLocaleTimeString(), " [info]: get screen stream success ", stream)
 }).catch(err => {
     console.log(">>> ", new Date().toLocaleTimeString(), " [info]: get screen stream fail ", err)
 }))
 
-shareButton.addEventListener('click', () => api.subscribeScreen(client.localScreenStream).then(() => {
+shareButton.addEventListener('click', () => api.publishScreen(tmpStream).then(() => {
         createLocalVideo(SCREEN_SHARE)
     }).catch(err => {
         console.log(">>> ", new Date().toLocaleTimeString(), " [error]: get screen stream fail ", err)
     })
 );
 
+callback.onScreenStream = function (account, stream) {
+    createRemoteVideo(account, stream, SCREEN_SHARE)
+}
 
-// avButton.addEventListener('click', );
-// exitButton.addEventListener('click', );
+callback.onUnPublisherScreen = function (account) {
+    removeVideoElement(account + "_" + SCREEN_SHARE)
+}
 
 /**
  * rtc sdk 的初始化方法
@@ -159,8 +165,8 @@ function createRemoteVideo(account, stream, mediaType) {
 /**
  * 移除video组件
  * @param elemId 要关闭的video元素的id
- * @see createRemoteVideo
- * @see createLocalVideo
+ * @see 远端video命名规则参考 createRemoteVideo
+ * @see 本端video命名规则参考 createLocalVideo
  */
 function removeVideoElement(elemId) {
     let elem = document.getElementById(elemId);
@@ -178,6 +184,7 @@ export {
     SCREEN_SHARE,
     AV_SHARE,
     socketUrl,
+    iceServer,
     init,
     createRemoteVideo,
     removeVideoElement

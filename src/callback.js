@@ -18,7 +18,7 @@ let callback = {
      * 房间里其他人发布本地流时
      * @return account:发布者的account
      */
-    onPublisher: function (account, stream) {
+    onPublisherScreen: function (account, stream) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onPublisher, account = {},stream = {}", account, stream)
     },
 
@@ -26,7 +26,7 @@ let callback = {
      * 当频道里其他人取消发布本地流时
      * @return account 取消者的account
      */
-    onUnPublisher: function (account) {
+    onUnPublisherScreen: function (account) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onUnPublisher, account = {}", account)
     },
 

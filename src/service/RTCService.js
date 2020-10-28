@@ -96,38 +96,27 @@ class RTCService {
      * @param mediaType 要关闭分享的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
     closeShare(mediaType) {
-        if (client.localScreenStream === null) {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [warn]: 当前没有进行 Screen 分享,无法关闭")
-            return false
-        }
+        return new Promise((resolve, reject) => {
+            // 发送closeScreenShare消息给所有收听者
+            socket.emitCloseShare(mediaType)
 
-        // 发送closeScreenShare消息给所有收听者
-        socket.emitCloseShare(mediaType)
+            // 清除流
+            if (mediaType === SCREEN_SHARE) {
+                client.localScreenStream.getTracks().forEach(track => {
+                    track.stop()
+                    client.localScreenStream.removeTrack(track)
+                })
 
-        // 停止
-        if (mediaType === SCREEN_SHARE) {
-            this.delScreenStream()
-        } else {
-        }
+                client.setLocalScreenStream(null)
+            }
 
-        // 删除local video
-        removeVideoElement(mediaType)
+            if (client.localScreenStream === undefined || client.localScreenStream === null) {
+                return resolve()
+            } else {
+                return reject("close ", mediaType, " fail")
+            }
 
-        return true
-    }
-
-    /**
-     * 清除stream,
-     * 1.关闭track -> 2.关闭stream -> 3.设置null
-     * @note 一般用于stream发送方在结束共享时调用此方法清理本地的stream信息
-     */
-    delScreenStream() {
-        client.localScreenStream.getTracks().forEach(track => {
-            track.stop()
-            client.localScreenStream.removeTrack(track)
         })
-
-        client.setLocalScreenStream(null)
     }
 
     /**

@@ -56,21 +56,23 @@ class RtcApi {
     /**
      * 推送屏幕流到到房间
      */
-    subscribeScreen(screenStream) {
-        return roomService.subscribeStream(screenStream, SCREEN_SHARE)
+    publishScreen(screenStream) {
+        return roomService.publishScreen(screenStream, SCREEN_SHARE)
     }
 
-    shareVideo() {
+    publishVideo() {
+    }
+
+    publishAudio() {
 
     }
 
-    shareAudio() {
 
-    }
-
-
-    unPublish() {
-
+    /**
+     * 停止推送屏幕流到房间
+     */
+    unPublishScreen() {
+        return rtcService.closeShare(SCREEN_SHARE)
     }
 
     /**

@@ -21,7 +21,7 @@ class RoomService {
      * @param stream 要推送的流
      * @param mediaType 要输出的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
-    subscribeStream(stream, mediaType) {
+    publishScreen(stream, mediaType) {
         return new Promise((resolve, reject) => {
             if (stream === undefined || stream === null) {
                 return reject("stream is null")
@@ -49,8 +49,6 @@ class RoomService {
             resolve()
         })
     }
-
-
 }
 
 export {RoomService}

@@ -145,7 +145,6 @@ class Socket {
         // 监听对端的addTrack()事件
         pc.ontrack = (event) => {
             if (event.streams) {
-                this.onTrack(account, event.streams[0], AV_SHARE)
             }
         }
         // 设置ice监听
@@ -173,6 +172,7 @@ class Socket {
         // 移除对端的连接信息
         if (mediaType === SCREEN_SHARE) {
             rtcService.delRemoteScreen(source)
+            callback.onUnPublisherScreen(source)
         } else { // 关闭 av pc
 
         }
