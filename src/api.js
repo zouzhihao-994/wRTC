@@ -1,22 +1,27 @@
 'use strict'
+import {client, rtcService, socket, roomService, init} from "./index"
 
 class RtcApi {
 
+    constructor() {
+    }
+
+
     /**
      * 初始化客户端
-     * @param option
+     * @param option 初始化参数
      */
     init(option) {
-
+        init(option)
     }
 
     /**
-     * 加入房间
-     * @param account
-     * @param roomId
+     * 客户端加入房间
+     * @param roomId 加入房间
      */
-    joinRoom(account, roomId) {
-
+    joinRoom(roomId) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info]: join room ", roomId)
+        roomService.join(roomId)
     }
 
     /**
@@ -28,11 +33,11 @@ class RtcApi {
 
     /**
      * 播放视频
-     * @param elementId
-     * @param options
+     * @param video dom组件
+     * @param stream 要播放的流
      */
-    play(elementId, options) {
-
+    play(video, stream) {
+        video.scrObject = stream
     }
 
     /**
@@ -117,11 +122,12 @@ class RtcApi {
 
     }
 
-    onJoined(){
+    onJoined() {
 
     }
 }
 
+export {RtcApi}
 
 
 

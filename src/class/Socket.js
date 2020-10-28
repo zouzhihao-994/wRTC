@@ -1,8 +1,9 @@
 'use strict';
 
 import io from 'socket.io-client';
-import {rtcService, client, socket, createRemoteVideo, removeVideoElement} from "../index";
+import {rtcService, client, socket, clientService, createRemoteVideo, removeVideoElement} from "../index";
 import {SCREEN_SHARE, AV_SHARE, iceServer} from "../const"
+import {callback} from "../callback";
 
 /**
  * 提供与socket操作相关的接口。
@@ -67,26 +68,23 @@ class Socket {
      * @param newcomer 发送join消息的客户端，即新加入的客户端
      */
     onJoined(participants, newcomer) {
-        // 针对第一次加入房间的客户端,保存房间所有人。全量保存
-        if (Object.keys(client.onlinePeer).length === 0) {
-            for (let idx in participants) {
-                client.addOnlinePeer(participants[idx].account, participants[idx])
-                console.log(">>> ", new Date().toLocaleTimeString(), " [新的peer]: ", client.getOnlinePeer(participants[idx].account))
-            }
-        } else { // 增量保存
-            client.addOnlinePeer(newcomer.account, newcomer)
-            console.log(">>> ", new Date().toLocaleTimeString(), " [新的peer]: ", client.getOnlinePeer(newcomer.account))
-        }
+        // 更新在线客户端信息
+        clientService.updateOnlinePeerList(participants, newcomer)
 
         // 如果本端正在进行视频分享,输出stream给新加入者
         if (client.localAvStream !== null) {
-            this.emitAvShareToAccount(newcomer.account)
-            rtcService.createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
+            this.emitAvShareToAccount(newcomer.account).then(() => {
+                    rtcService.createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
+                }
+            )
         }
         if (client.localScreenStream !== null) {
             this.emitScreenShareToAccount(newcomer.account)
             rtcService.createPCAndAddTrack(newcomer.account, client.localScreenStream, SCREEN_SHARE)
         }
+
+        // 回调
+        callback.onJoin && callback.onJoin(newcomer.account)
     }
 
     /**
@@ -392,6 +390,9 @@ class Socket {
             'dest': dest,
             'source': client.account
         })
+        return new Promise((resolve, reject) => {
+            return resolve
+        })
     }
 
     emitScreenShareToAccount(dest) {
@@ -458,7 +459,7 @@ class Socket {
         })
     }
 
-    clean(){
+    clean() {
         this._socketServer = null
     }
 

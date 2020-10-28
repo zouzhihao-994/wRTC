@@ -1,39 +1,61 @@
 'use strict';
 
+import {SCREEN_SHARE, AV_SHARE, socketUrl} from "./const"
 import {Client} from "./class/Client";
 import {Socket} from "./class/Socket";
-import {RTCService} from "./class/RTCService";
-import {SCREEN_SHARE, AV_SHARE, socketUrl} from "./const"
+import {RTCService} from "./service/RTCService";
+import {RoomService} from "./service/RoomService";
+import {ShareService} from "./service/ShareService";
+import {ClientService} from "./service/ClientService";
+import {callback} from "./callback"
 
-// 客户端信息
 let client;
 let socket;
 let rtcService;
+let roomService;
+let shareService;
+let clientService;
 
+// 绑定元素
+let initButton = document.getElementById("initBtn")
+let joinButton = document.getElementById("joinBtn")
+let avButton = document.getElementById("avBtn")
+let shareButton = document.getElementById("shareBtn");
+let exitButton = document.getElementById("leaveBtn")
+let accountInput = document.getElementById('account');
+let roomInput = document.getElementById('room');
+let remoteScreenDiv = document.querySelector('div#screenDiv');
+let localVideoDiv = document.querySelector('div#videoDiv')
+
+// 绑定事件
+initButton.addEventListener('click', () => init({account: accountInput.value, token: null, socketUrl: socketUrl}));
+joinButton.addEventListener('click', () => roomService.join(roomInput.value))
+// shareButton.addEventListener('click', )
+// avButton.addEventListener('click', );
+// exitButton.addEventListener('click', );
 
 /**
- * join事件
- * join会触发系统初始化，初始化主要初始化两个组件，client和socket。
- * client {@class Client}
- * socket {@class Socket}
+ * rtc sdk 的初始化方法
+ * @param option
  */
-function joinHandler() {
-    // 创建客户端
+function init(option) {
+
+    // 创建客户端 client
     console.log(">>> ", new Date().toLocaleTimeString(), " [初始化]: client ...")
-    client = new Client(accountInput.value, roomInput.value, socketUrl)
-    client.toString()
+    client = new Client(option.account, option.token, option.socketUrl)
 
     // 创建Socket
     console.log(">>> ", new Date().toLocaleTimeString(), " [初始化]: socket ...")
     socket = new Socket(socketUrl)
     socket.init()
 
-    console.log(">>> ", new Date().toLocaleTimeString(), " [初始化]: rtcService ...")
+    // 初始化类
     rtcService = new RTCService()
-
-    // 发送join消息
-    socket.emitJoin();
+    roomService = new RoomService()
+    shareService = new ShareService()
+    clientService = new ClientService()
 }
+
 
 /**
  * 音视频分享
@@ -161,6 +183,13 @@ export {
     client,
     socket,
     rtcService,
+    callback,
+    clientService,
+    roomService,
+    SCREEN_SHARE,
+    AV_SHARE,
+    socketUrl,
+    init,
     createRemoteVideo,
     removeVideoElement
 }
