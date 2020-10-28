@@ -19,7 +19,7 @@ class Client {
         this._token = token
 
         // 是否接收远端屏幕流
-        this._issubscribeScreen = true
+        this._isSubscribeScreen = true
 
         // 当前房间的在线客户端信息 {K:account,V:clientInfo}
         this._onlinePeer = {}
@@ -39,6 +39,15 @@ class Client {
         this._localScreenStream = null
         // 用于存储屏幕共享的对端，K:account,V:对端的pc
         this._remoteScreenPC = {}
+    }
+
+
+    get isSubscribeScreen() {
+        return this._isSubscribeScreen;
+    }
+
+    setIsSubscribeScreen(bool) {
+        this._isSubscribeScreen = bool;
     }
 
     get token() {
