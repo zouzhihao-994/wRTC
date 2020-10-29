@@ -29,6 +29,9 @@ let callback = {
      */
     onAudioTrack: null,
 
+    /**
+     * 订阅远程音频流成功
+     */
     onVideoTrack: null,
 
     /**

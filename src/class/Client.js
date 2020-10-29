@@ -159,12 +159,12 @@ class Client {
         return this._localScreenStream;
     }
 
-    get remoteScreenPC() {
-        return this._remoteScreenPC;
+    remoteScreenPC(account) {
+        return this._remoteScreenPC[account];
     }
 
-    get remoteAvPC() {
-        return this._remoteAvPC;
+    remoteAvPC(account) {
+        return this._remoteAvPC[account];
     }
 
     get account() {

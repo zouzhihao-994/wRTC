@@ -1,16 +1,7 @@
 'use strict';
 
 import io from 'socket.io-client';
-import {
-    rtcService,
-    client,
-    socket,
-    createRemoteVideo,
-    SCREEN_SHARE,
-    AV_SHARE,
-    iceServer,
-    callback
-} from "../index";
+import {rtcService, client, socket, SCREEN_SHARE, AV_SHARE, iceServer, callback} from "../index";
 
 /**
  * 提供与socket操作相关的接口。
@@ -70,7 +61,7 @@ class Socket {
     }
 
     /**
-     * 收到join请求时，将room中所有人的account保存
+     * 收到join请求时
      * @param participants 该房间里的所有人
      * @param newcomer 发送join消息的客户端，即新加入的客户端
      */
@@ -202,7 +193,6 @@ class Socket {
         callback.onLeave(account)
     }
 
-
     /**
      * 监听offer消息
      * @param data 包含四个字段，
@@ -288,23 +278,6 @@ class Socket {
     }
 
     /**
-     * @param account 对端的account
-     * @param screenStream 屏幕流
-     * @param mediaType 要输出的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
-     */
-    onTrack(account, screenStream, mediaType) {
-        if (account === client.account) {
-            return
-        }
-        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, "的 track")
-        try {
-            createRemoteVideo(account, screenStream, mediaType)
-        } catch (e) {
-            console.error('[Caller error] onRemoteScreenStream', e)
-        }
-    }
-
-    /**
      * 监听ice candidate
      *
      * @param data 对端的emitIceCandidate方法发送的请求内容 {@link emitIceCandidate}
@@ -380,6 +353,10 @@ class Socket {
         })
     }
 
+    /**
+     * 向单个客户端发送音视频分享消息
+     * @param dest 目标客户端account
+     */
     emitAvShareToAccount(dest) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: Av Share 消息到信令服务器 , dest:", dest)
         this._socketServer.emit('avShareToAccount', {
@@ -388,6 +365,10 @@ class Socket {
         })
     }
 
+    /**
+     * 向单个客户端发送桌面分享消息
+     * @param dest 目标客户端的account
+     */
     emitScreenShareToAccount(dest) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: Screen Share 消息到信令服务器 , dest:", dest)
         this._socketServer.emit('screenShareToAccount', {
@@ -444,6 +425,9 @@ class Socket {
         })
     }
 
+    /**
+     * 发送离开房间的消息
+     */
     emitLeaveRoom() {
         console.log(">>> ", new Date().toLocaleTimeString(), " [发送]: leve 消息到信息服务里,room = ", client.roomId, "}")
         this._socketServer.emit('leave', {

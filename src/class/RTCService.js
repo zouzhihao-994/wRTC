@@ -20,16 +20,20 @@ class RTCService {
         socket.emitJoin()
     }
 
+    /**
+     * 离开房间
+     */
     leave() {
         // 发送leave
         socket.emitLeaveRoom()
         // 清除pc
         for (let idx in client.remoteAvPC()) {
-            this.delPcCallback(client.remoteAvPC[pc])
+            this.delPcCallback(client.remoteAvPC(idx))
         }
         for (let idx in client.remoteScreenPC()) {
-            this.delPcCallback(client.remoteAvPC[pc])
+            this.delPcCallback(client.remoteScreenPC(idx))
         }
+
         client.clean()
     }
 

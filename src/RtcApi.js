@@ -10,7 +10,6 @@ class RtcApi {
     constructor() {
     }
 
-
     /**
      * 初始化客户端
      * @param option 初始化参数
@@ -36,12 +35,11 @@ class RtcApi {
         return rtcService.getScreenStream()
     }
 
-
     /**
      * 离开房间
      */
-    leaveRoom(account, roomId) {
-
+    leaveRoom() {
+        rtcService.leave()
     }
 
     /**
@@ -60,13 +58,18 @@ class RtcApi {
         return rtcService.publishScreen(screenStream, SCREEN_SHARE)
     }
 
+    /**
+     * 推送视频流到房间
+     */
     publishVideo() {
     }
 
+    /**
+     * 推送音频流到房间
+     */
     publishAudio() {
 
     }
-
 
     /**
      * 停止推送屏幕流到房间
@@ -126,9 +129,7 @@ class RtcApi {
     }
 }
 
-export {
-    RtcApi
-}
+export {RtcApi}
 
 
 
