@@ -1,6 +1,6 @@
 'use strict';
 
-import {client, socket, removeVideoElement, rtcService} from "../index";
+import {client, socket, rtcService, callback} from "../index";
 import {SCREEN_SHARE, AV_SHARE, iceServer} from "../const"
 
 /**
@@ -20,9 +20,22 @@ class RTCService {
         socket.emitJoin()
     }
 
+    leave() {
+        // 发送leave
+        socket.emitLeaveRoom()
+        // 清除pc
+        for (let idx in client.remoteAvPC()) {
+            this.delPcCallback(client.remoteAvPC[pc])
+        }
+        for (let idx in client.remoteScreenPC()) {
+            this.delPcCallback(client.remoteAvPC[pc])
+        }
+        client.clean()
+    }
+
     /**
      * 获取桌面流
-     * @returns {Promise<>} resolve:桌面的流.reject:错误信息
+     * @returns {Promise<>} resolve:桌面流.reject:错误信息
      */
     getScreenStream() {
         return new Promise((resolve, reject) => {
@@ -34,6 +47,11 @@ class RTCService {
         })
     }
 
+    /**
+     * 获取音视频流
+     * @param option
+     * @returns {Promise<>} resolve:音视频流.reject:错误信息
+     */
     getAvScreenStream(option) {
         return new Promise((resolve, reject) => {
             if (option === undefined || option === null) {
@@ -71,8 +89,13 @@ class RTCService {
                 if (peerName === client.account) {
                     continue
                 }
-                // 创建pc，设置回调函数，添加track
-                rtcService.createPCAndAddTrack(peerName, stream, mediaType)
+                // 创建pc，设置回调函数
+                rtcService.createPC(peerName, stream, mediaType).then(pc => {
+                    // 添加track
+                    rtcService.addTrackToPC(pc, stream, mediaType)
+                }).catch(err => {
+                    return reject(err)
+                })
             }
 
             // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
@@ -80,7 +103,6 @@ class RTCService {
             resolve()
         })
     }
-
 
     /**
      * 创建OFFER
@@ -105,40 +127,54 @@ class RTCService {
 
     /**
      * 创建一个peerConnection，然后输出向connection 中添加 stream
-     * 具体的流程为：1.创建pc -> 2.connection设置track监听 -> 3.设置onnegotiationneeded监听 -> 4.输出本端的流到pc中
      * @param account 对端的account
      * @param stream 要输出的流
      * @param mediaType 视频的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
-    createPCAndAddTrack(account, stream, mediaType) {
-        // 创建pc
-        let pc = new RTCPeerConnection(iceServer)
+    createPC(account, stream, mediaType) {
+        console.log("create pc params , account {} ,stream {} ,mediaType {}", account, stream, mediaType)
+        return new Promise((resolve, reject) => {
+            try {
+                // 创建pc
+                let pc = new RTCPeerConnection(iceServer)
 
-        // 保存account和pc的映射关系
-        if (mediaType === AV_SHARE) {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 保存 AV PC , account: ", account)
-            client.addRemoteAvPC(account, pc);
-        } else {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 保存 Screen PC , account: ", account)
-            client.addRemoteScreenPC(account, pc)
-        }
+                // 保存account和pc的映射关系
+                if (mediaType === AV_SHARE) {
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [info] 保存 AV PC , account: ", account)
+                    client.addRemoteAvPC(account, pc);
+                } else {
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [info] 保存 Screen PC , account: ", account)
+                    client.addRemoteScreenPC(account, pc)
+                }
 
-        // 设置negotiation监听
-        pc.onnegotiationneeded = () => {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: ", account, "的 negotiationneeded 消息")
-            this.createOfferHandle(account, pc, mediaType)
-        }
+                // 设置negotiation监听
+                pc.onnegotiationneeded = () => {
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [info] ", account, "的 negotiationneeded 消息")
+                    this.createOfferHandle(account, pc, mediaType)
+                }
 
-        // 输出track
+                return resolve(pc)
+            } catch (err) {
+                return reject(err)
+            }
+        })
+    }
+
+    /**
+     * 添加stream到pc中
+     */
+    addTrackToPC(pc, stream, mediaType) {
         try {
             stream.getTracks().forEach(track => {
-                console.log(">>> ", new Date().toLocaleTimeString(), " [info]: track 给", account)
+                console.log(">>> ", new Date().toLocaleTimeString(), " [info] add track to pc, ", pc)
                 // 设置停止共享监听
                 track.onended = event => {
-                    console.log(">>> ", new Date().toLocaleTimeString(), " [info]: ", account, "的 Close Screen Share 消息")
-                    // rtcService.closeShare(mediaType)
-                    console.log(">>> ", new Date().toLocaleTimeString(), " [info]: event = ", event)
-                    // todo 执行回调函数
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [info] Close Screen Share 消息")
+                    this.closeShare(mediaType).then(() => {
+                        callback.onUnLocalScreen()
+                    }).catch(err => {
+                        console.log(">>> ", new Date().toLocaleTimeString(), " [error] Close Screen fail, error = ", err)
+                    })
                 }
                 // 添加远端
                 pc.addTrack(track, stream)
@@ -146,6 +182,17 @@ class RTCService {
         } catch (e) {
             console.log(">>> ", new Date().toLocaleTimeString(), " [error] get stream's track fail,error =", e)
         }
+    }
+
+    /**
+     * 清除pc
+     * 清除设置的回调函数
+     * @param pc 要清除的peerConnection
+     */
+    delPcCallback(pc) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] 清除 pc 的回调函数", pc)
+        pc.ontrack = null
+        pc.onicecandidate = null
     }
 
     /**
@@ -177,19 +224,39 @@ class RTCService {
     }
 
     /**
+     * 停止接收远端视频流
+     */
+    stopSubscribeScreen() {
+        return new Promise((resolve, reject) => {
+            // 设置标志
+            client.setIsSubscribeScreen(false)
+            // 删除所有远端信息
+            for (let i = client.screenSharingPeer.length - 1; i >= 0; i--) {
+                this.delRemoteScreen(client.screenSharingPeer[i])
+            }
+
+            if (client.screenSharingPeer.length === 0) {
+                return resolve
+            } else {
+                return reject
+            }
+        })
+
+    }
+
+    /**
      * 清除远端account的屏幕流相关数据
      * @param account 对端的account
      * @note 该方法主要提供给共享接收端调用，用于在共享端停止共享后，清除共享端的相关消息
      */
     delRemoteScreen(account) {
-        console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 停止接收 , account: ", account, "的屏幕流")
-        let pc = client.remoteScreen[account]
-        pc.ontrack = null
-        pc.onicecandidate = null
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] del remote screen: ", account, "的屏幕流")
+        let pc = client.remoteScreenPC[account]
+        this.delPcCallback(pc)
         client.delRemoteScreenPC(account)
         client.delScreenSharingPeer(account)
-        pc.close()
     }
+
 
 }
 

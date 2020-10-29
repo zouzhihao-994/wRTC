@@ -5,9 +5,7 @@ import {
     rtcService,
     client,
     socket,
-    clientService,
     createRemoteVideo,
-    removeVideoElement,
     SCREEN_SHARE,
     AV_SHARE,
     iceServer,
@@ -77,23 +75,28 @@ class Socket {
      * @param newcomer 发送join消息的客户端，即新加入的客户端
      */
     onJoined(participants, newcomer) {
-
         // 更新在线客户端信息
-        clientService.updateOnlinePeerList(participants, newcomer)
+        client.updateOnlinePeerList(participants, newcomer.account)
+
+        if (newcomer.account === client.account) {
+            return
+        }
 
         // 如果本端正在进行视频分享,输出stream给新加入者
         if (client.localAvStream !== null) {
             this.emitAvShareToAccount(newcomer.account)
-            rtcService.createPCAndAddTrack(newcomer.account, client.localAvStream, AV_SHARE)
+            rtcService.createPC(newcomer.account, client.localAvStream, AV_SHARE).then(pc => {
+                rtcService.addTrackToPC(pc, client.localAvStream, AV_SHARE)
+            })
         }
         if (client.localScreenStream !== null) {
             this.emitScreenShareToAccount(newcomer.account)
-            rtcService.createPCAndAddTrack(newcomer.account, client.localScreenStream, SCREEN_SHARE)
+            rtcService.createPC(newcomer.account, client.localScreenStream, SCREEN_SHARE).then(pc => {
+                rtcService.addTrackToPC(pc, client.localScreenStream, SCREEN_SHARE)
+            })
         }
 
-        if (newcomer.account !== client.account) {
-            callback.onJoin(newcomer.account)
-        }
+        callback.onJoin(newcomer.account)
 
     }
 
@@ -103,7 +106,8 @@ class Socket {
      */
     onScreenShared(account) {
         // 不处理自己的screenShare消息
-        if (account === client.account) {
+        // 如果设置为不接收订阅，也不接收
+        if (account === client.account || !client.isSubscribeScreen) {
             return;
         }
 
@@ -112,17 +116,12 @@ class Socket {
         let pc = new RTCPeerConnection(iceServer)
         client.addRemoteScreenPC(account, pc)
         client.addScreenSharingPeer(account)
-
-        // 设置track监听
         pc.ontrack = (event) => {
             if (event.streams) {
-                // 发送回调
+                // 执行回调
                 callback.onScreenStream(account, event.streams[0])
-                // this.onTrack(account, event.streams[0], SCREEN_SHARE)
             }
         }
-
-        // 设置ice监听
         pc.onicecandidate = (event) => {
             if (event.candidate) {
                 this.emitIceCandidate(event.candidate, account, SCREEN_SHARE)
@@ -135,7 +134,7 @@ class Socket {
      * @param account
      */
     onAvShared(account) {
-        if (account === client.account) {
+        if (account === client.account || !client.isSubscribeScreen) {
             return;
         }
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, " 的 AV Share 消息")
@@ -145,6 +144,7 @@ class Socket {
         // 监听对端的addTrack()事件
         pc.ontrack = (event) => {
             if (event.streams) {
+                callback.onScreenStream(account, status[0])
             }
         }
         // 设置ice监听
@@ -161,18 +161,15 @@ class Socket {
      * @param mediaType 要关闭的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
      */
     onCloseShare(source, mediaType) {
-        if (source === client.account ) {
+        if (source === client.account) {
             return
         }
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", source, " 的 close ", mediaType, " 消息")
 
-        // 删除对应的remote video
-        removeVideoElement(source + "_" + mediaType)
-
         // 移除对端的连接信息
         if (mediaType === SCREEN_SHARE) {
             rtcService.delRemoteScreen(source)
-            callback.onUnPublisherScreen(source)
+            callback.onUnScreenShared(source)
         } else { // 关闭 av pc
 
         }
@@ -183,18 +180,7 @@ class Socket {
      * @param account 消息发送方account，即断连的客户端
      */
     onDisConnect(account) {
-        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", account, " 的 disConnect 消息")
-
-        // 如果断连的客户端正在进行屏幕分享,需要清除相关信息
-        if (client.existScreenSharingPeer(account)) {
-            console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 清除 ", account, " 的共享信息")
-            rtcService.delRemoteScreen(account)
-            removeVideoElement(account + "_" + SCREEN_SHARE)
-        }
-
-        // todo 如果断连的客户端正在进行音视频分享,需要清除相关信息
-
-        client.delOnlinePeer(account)
+        this.onLeave(account)
     }
 
     /**
@@ -209,12 +195,11 @@ class Socket {
         if (client.existScreenSharingPeer(account)) {
             console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 清除 ", account, " 的共享信息")
             rtcService.delRemoteScreen(account)
-            removeVideoElement(account + "_" + SCREEN_SHARE)
         }
 
-        // todo 如果断连的客户端正在进行音视频分享,需要清除相关信息
-
         client.delOnlinePeer(account)
+
+        callback.onLeave(account)
     }
 
 
@@ -234,10 +219,10 @@ class Socket {
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, " 的 offer 消息")
         if (data.mediaType === SCREEN_SHARE) {
             // data.source 是发送方的account,发送方也就是本端的对端
-            client.remoteScreen[data.source] && client.remoteScreen[data.source].setRemoteDescription(data.sdp, () => {
-                client.remoteScreen[data.source].createAnswer().then((desc) => {
-                    client.remoteScreen[data.source].setLocalDescription(desc, () => {
-                        this.emitAnswer(data.source, client.roomId, client.remoteScreen[data.source].localDescription, SCREEN_SHARE)
+            client.remoteScreenPC[data.source] && client.remoteScreenPC[data.source].setRemoteDescription(data.sdp, () => {
+                client.remoteScreenPC[data.source].createAnswer().then((desc) => {
+                    client.remoteScreenPC[data.source].setLocalDescription(desc, () => {
+                        this.emitAnswer(data.source, client.roomId, client.remoteScreenPC[data.source].localDescription, SCREEN_SHARE)
                     }, (err) => {
                         console.log(">>> ", new Date().toLocaleTimeString(), " [错误]: setLocalDescription error , ", err)
                     })
@@ -275,9 +260,9 @@ class Socket {
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, "的 answer 消息")
         // 屏幕共享模式
         if (data.mediaType === SCREEN_SHARE) {
-            client.remoteScreen[data.source] && client.remoteScreen[data.source].setRemoteDescription(data.sdp, () => {
+            client.remoteScreenPC[data.source] && client.remoteScreenPC[data.source].setRemoteDescription(data.sdp, () => {
                 // 设置ice监听
-                client.remoteScreen[data.source].remoteScreen = (event) => {
+                client.remoteScreenPC[data.source].remoteScreenPC = (event) => {
                     console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, "的 icecandidate 消息")
                     if (event.candidate) {
                         socket.emitIceCandidate(event.candidate, data.source, data.mediaType)
@@ -331,7 +316,7 @@ class Socket {
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, " 发送的ice candidate", data)
         if (data.mediaType === SCREEN_SHARE) {
             if (data.candidate) {
-                client.remoteScreen[data.source].addIceCandidate(data.candidate).catch((err) => {
+                client.remoteScreenPC[data.source].addIceCandidate(data.candidate).catch((err) => {
                     console.error('addIceCandidate error:', err);
                 })
             }
@@ -465,10 +450,6 @@ class Socket {
             'roomId': client.roomId,
             'account': client.account
         })
-    }
-
-    clean() {
-        this._socketServer = null
     }
 
     toString() {

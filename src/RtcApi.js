@@ -105,9 +105,10 @@ class RtcApi {
 
     /**
      * 取消订阅远端流
+     * todo
      */
-    unSubscribe() {
-        client.setIsSubscribeScreen(false)
+    unSubscribeScreen() {
+        return rtcService.stopSubscribeScreen()
     }
 
     /**

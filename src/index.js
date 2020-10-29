@@ -3,19 +3,13 @@
 import {SCREEN_SHARE, AV_SHARE, socketUrl, iceServer} from "./const"
 import {Client} from "./class/Client";
 import {Socket} from "./class/Socket";
-import {RTCService} from "./service/RTCService";
-import {RoomService} from "./service/RoomService";
-import {ShareService} from "./service/ShareService";
-import {ClientService} from "./service/ClientService";
+import {RTCService} from "./class/RTCService";
 import {callback} from "./callback"
-import {RtcApi} from "./api";
+import {RtcApi} from "./RtcApi";
 
 let client;
 let socket;
 let rtcService;
-let roomService;
-let shareService;
-let clientService;
 
 let api = new RtcApi()
 
@@ -57,10 +51,15 @@ unSubscribeScreen.addEventListener('click', () => {
     })
 });
 
+callback.onLeave = function (account) {
+    console.log(">>> ", new Date().toLocaleTimeString(), " [info] 移除 video ，id = ", account + "_" + SCREEN_SHARE)
+    removeVideoElement(account + "_" + SCREEN_SHARE)
+}
 callback.onScreenStream = function (account, stream) {
     createRemoteVideo(account, stream, SCREEN_SHARE)
 }
-callback.onUnPublisherScreen = function (account) {
+callback.onUnScreenShared = function (account) {
+    console.log(">>> ", new Date().toLocaleTimeString(), " [info] 移除 video ，id = ", account + "_" + SCREEN_SHARE)
     removeVideoElement(account + "_" + SCREEN_SHARE)
 }
 
@@ -81,20 +80,6 @@ function init(option) {
 
     // 初始化类
     rtcService = new RTCService()
-    roomService = new RoomService()
-    shareService = new ShareService()
-    clientService = new ClientService()
-}
-
-
-/**
- * 用户退出房间
- */
-function leaveRoomHandle() {
-    // 发送leave
-    socket.emitLeaveRoom()
-    client.clean()
-    socket.clean()
 }
 
 /**
@@ -158,9 +143,6 @@ export {
     socket,
     rtcService,
     callback,
-    shareService,
-    clientService,
-    roomService,
     SCREEN_SHARE,
     AV_SHARE,
     socketUrl,

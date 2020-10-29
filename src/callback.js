@@ -15,19 +15,11 @@ let callback = {
     },
 
     /**
-     * 房间里其他人发布本地流时
-     * @return account:发布者的account
+     * 本地取消屏幕共享
+     * 在用户点击浏览器的停止共享按钮时触发时候
      */
-    onPublisherScreen: function (account, stream) {
-        console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onPublisher, account = {},stream = {}", account, stream)
-    },
-
-    /**
-     * 当频道里其他人取消发布本地流时
-     * @return account 取消者的account
-     */
-    onUnPublisherScreen: function (account) {
-        console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onUnPublisher, account = {}", account)
+    onUnLocalScreen: function () {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onUnLocalScreenStream")
     },
 
     /**
@@ -46,6 +38,22 @@ let callback = {
      */
     onScreenStream: function (account, stream) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onScreenTrack, account = {},stream = {}", account, stream)
+    },
+
+    /**
+     * 房间中有人发起屏幕分享请求
+     * @param account
+     */
+    onScreenShared: function (account) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onScreenShared, account = ", account)
+    },
+
+    /**
+     * 有人取消屏幕分享
+     * @param account
+     */
+    onUnScreenShared: function (account) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] callback -> onScreenShared, account = ", account)
     },
 
     /**

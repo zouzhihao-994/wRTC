@@ -1,5 +1,7 @@
 'use strict';
 
+import {client} from "../index";
+
 /**
  * 客户端
  * 主要负责保存客户端基本信息与提供相关方法
@@ -75,6 +77,24 @@ class Client {
     }
 
     /**
+     * 更新正在屏幕共享人列表
+     * @param participants 当前房间所有在线客户端
+     * @param newcomer 客户端信息
+     */
+    updateOnlinePeerList(participants, newcomer) {
+        // 针对第一次加入房间的客户端,保存房间所有人。全量保存
+        if (Object.keys(client.onlinePeer).length === 0) {
+            for (let idx in participants) {
+                client.addOnlinePeer(participants[idx].account, participants[idx])
+                console.log(">>> ", new Date().toLocaleTimeString(), " [info] 新客户端加入 ", client.getOnlinePeer(participants[idx].account))
+            }
+        } else { // 增量保存
+            this.addOnlinePeer(newcomer.account, newcomer)
+            console.log(">>> ", new Date().toLocaleTimeString(), " [info] 新客户端加入 ", client.getOnlinePeer(newcomer.account))
+        }
+    }
+
+    /**
      * 判断account是否是正在分享的客户端
      * @param account 要判断的客户端account
      * @return boolean true:是，false:不是
@@ -107,6 +127,7 @@ class Client {
     }
 
     delOnlinePeer(peerName) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] remove online peer ", peerName)
         delete this._onlinePeer[peerName];
     }
 
@@ -138,7 +159,7 @@ class Client {
         return this._localScreenStream;
     }
 
-    get remoteScreen() {
+    get remoteScreenPC() {
         return this._remoteScreenPC;
     }
 
@@ -163,12 +184,12 @@ class Client {
     }
 
     /**
-     * 清除client的所有数据
+     * 清除client的部分数据
+     * @note 方法定义是清理与上个房间相关的数据
      */
     clean() {
-        this._account = null;
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info]: clean client")
         this._roomId = null;
-        this._socketUrl = null
         this._onlinePeer = {}
         this._screenSharingPeer = []
         this._avSharingPeer = []
