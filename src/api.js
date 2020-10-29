@@ -1,5 +1,5 @@
 'use strict'
-import {client, rtcService, socket, roomService, init, SCREEN_SHARE} from "./index"
+import {client, rtcService, init, SCREEN_SHARE} from "./index"
 
 /**
  * sdk 对外提供接口的整合类
@@ -25,7 +25,7 @@ class RtcApi {
      */
     joinRoom(roomId) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [info]: join room ", roomId)
-        roomService.join(roomId)
+        rtcService.join(roomId)
     }
 
     /**
@@ -57,7 +57,7 @@ class RtcApi {
      * 推送屏幕流到到房间
      */
     publishScreen(screenStream) {
-        return roomService.publishScreen(screenStream, SCREEN_SHARE)
+        return rtcService.publishScreen(screenStream, SCREEN_SHARE)
     }
 
     publishVideo() {
@@ -121,10 +121,6 @@ class RtcApi {
      * 结束预览本地摄像头
      */
     stopPreview() {
-
-    }
-
-    onJoined() {
 
     }
 }

@@ -28,6 +28,7 @@ let shareButton = document.getElementById("shareBtn");
 let exitButton = document.getElementById("leaveBtn")
 let accountInput = document.getElementById('account');
 let roomInput = document.getElementById('room');
+let unSubscribeScreen = document.getElementById('unSubscribeScreenBtn');
 let remoteScreenDiv = document.querySelector('div#screenDiv');
 let localVideoDiv = document.querySelector('div#videoDiv')
 
@@ -42,18 +43,23 @@ getScreenButton.addEventListener('click', () => api.getScreenStream().then(strea
 }).catch(err => {
     console.log(">>> ", new Date().toLocaleTimeString(), " [info]: get screen stream fail ", err)
 }))
-
 shareButton.addEventListener('click', () => api.publishScreen(tmpStream).then(() => {
         createLocalVideo(SCREEN_SHARE)
     }).catch(err => {
         console.log(">>> ", new Date().toLocaleTimeString(), " [error]: get screen stream fail ", err)
     })
 );
+unSubscribeScreen.addEventListener('click', () => {
+    api.unSubscribeScreen().then(() => {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info][event] 停止订阅远端流成功")
+    }).catch(() => {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [warn][event] 停止订阅远端流失败")
+    })
+});
 
 callback.onScreenStream = function (account, stream) {
     createRemoteVideo(account, stream, SCREEN_SHARE)
 }
-
 callback.onUnPublisherScreen = function (account) {
     removeVideoElement(account + "_" + SCREEN_SHARE)
 }
@@ -80,32 +86,6 @@ function init(option) {
     clientService = new ClientService()
 }
 
-
-/**
- * 音视频分享
- */
-function avShareHandler() {
-    if (client.localAvStream) {
-        console.log("本地已经存在音视频流，无法再创建")
-        return;
-    }
-
-    navigator.mediaDevices.getUserMedia({audio: false, video: true}).then(stream => {
-        client.setLocalAvStream(stream)
-        createLocalVideo(AV_SHARE)
-        for (let peerName in client.onlinePeer) {
-            if (peerName === client.account) {
-                continue
-            }
-            // 创建对端pc，设置回调函数，添加track
-            rtcService.createPCAndAddTrack(peerName, stream, AV_SHARE)
-        }
-        // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
-        socket.emitAvShare()
-    }).catch(e => {
-        console.error('av share getDisplayMedia addTrack error', e);
-    })
-}
 
 /**
  * 用户退出房间

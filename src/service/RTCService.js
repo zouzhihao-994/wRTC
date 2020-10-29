@@ -11,6 +11,16 @@ class RTCService {
     }
 
     /**
+     * 加入房间
+     * 更新roomId，然后向房间发送join广播消息,
+     * 其他人会接收到{@link Socket#onJoined}消息
+     */
+    join(roomId) {
+        client.setRoomId(roomId)
+        socket.emitJoin()
+    }
+
+    /**
      * 获取桌面流
      * @returns {Promise<>} resolve:桌面的流.reject:错误信息
      */
@@ -23,6 +33,54 @@ class RTCService {
             })
         })
     }
+
+    getAvScreenStream(option) {
+        return new Promise((resolve, reject) => {
+            if (option === undefined || option === null) {
+                // 开启视频，不开启音频
+                option = {audio: false, video: true}
+            }
+            navigator.mediaDevices.getUserMedia(option).then(stream => {
+                return resolve(stream)
+            }).catch(err => {
+                return reject(err)
+            })
+        })
+    }
+
+    /**
+     * 推送流到房间中
+     * @param stream 要推送的流
+     * @param mediaType 要输出的视频类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
+     */
+    publishScreen(stream, mediaType) {
+        return new Promise((resolve, reject) => {
+            if (stream === undefined || stream === null) {
+                return reject("stream is null")
+            }
+
+            if (mediaType === SCREEN_SHARE) {
+                client.setLocalScreenStream(stream)
+            } else if (mediaType === AV_SHARE) {
+                client.setLocalAvStream(stream)
+            } else {
+                return reject("mediaType is not SCREEN_SHARE or AV_SHARE")
+            }
+
+            for (let peerName in client.onlinePeer) {
+                if (peerName === client.account) {
+                    continue
+                }
+                // 创建pc，设置回调函数，添加track
+                rtcService.createPCAndAddTrack(peerName, stream, mediaType)
+            }
+
+            // 发送屏幕共享事件到信令服务器，信令服务器会发送screenShared事件给account = peerName的客户端
+            socket.emitScreenShare()
+            resolve()
+        })
+    }
+
 
     /**
      * 创建OFFER
@@ -90,7 +148,6 @@ class RTCService {
         }
     }
 
-
     /**
      * 本端关闭分享
      * @param mediaType 要关闭分享的类型 {@link SCREEN_SHARE} or {@link AV_SHARE}
@@ -120,18 +177,18 @@ class RTCService {
     }
 
     /**
-     * 清除source的信息
+     * 清除远端account的屏幕流相关数据
      * @param account 对端的account
      * @note 该方法主要提供给共享接收端调用，用于在共享端停止共享后，清除共享端的相关消息
      */
     delRemoteScreen(account) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info]: 停止接收 , account: ", account, "的屏幕流")
         let pc = client.remoteScreen[account]
         pc.ontrack = null
         pc.onicecandidate = null
-        pc.close()
         client.delRemoteScreenPC(account)
-
         client.delScreenSharingPeer(account)
+        pc.close()
     }
 
 }

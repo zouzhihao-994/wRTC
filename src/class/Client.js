@@ -42,11 +42,16 @@ class Client {
     }
 
 
+    get screenSharingPeer() {
+        return this._screenSharingPeer;
+    }
+
     get isSubscribeScreen() {
         return this._isSubscribeScreen;
     }
 
     setIsSubscribeScreen(bool) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] 不再接收远端流 ")
         this._isSubscribeScreen = bool;
     }
 
@@ -64,7 +69,9 @@ class Client {
      * @api 在收到 {@link onScreenShared} 消息时候，或者本端发起分享的时候调用
      */
     addScreenSharingPeer(account) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] 添加正在分享的客户端 ", account)
         this._screenSharingPeer.push(account);
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] 当前正在分享的客户端 ", this.screenSharingPeer)
     }
 
     /**
@@ -79,8 +86,8 @@ class Client {
     /**
      * 移除正在分享的客户端
      * @param account 要删除的account
-     * @api 在收到 {@link onCloseShare} 消息时要移除对端，在收到 {@link onDisConnect} 消息时候，
-     *      通过 {@link existScreenSharingPeer} 判断是否需要删除
+     * @api 在收到 {@link onCloseShare} 消息时要移除对端，
+     *      在收到 {@link onDisConnect} 消息时候，通过 {@link existScreenSharingPeer} 判断是否需要删除
      */
     delScreenSharingPeer(account) {
         let idx = this._screenSharingPeer.indexOf(account)
