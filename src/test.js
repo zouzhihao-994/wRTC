@@ -44,7 +44,7 @@ function test(){
     });
     leaveButton.addEventListener('click', api.leaveRoom);
 
-// 测试使用的回调函数
+    // 测试使用的回调函数
     callback.onLeave = function (account) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [info] 移除 video ，id = ", account + "_" + SCREEN_SHARE)
         removeVideoElement(account + "_" + SCREEN_SHARE)

@@ -116,6 +116,7 @@ class RTCService {
      * @param mediaType 视频类型，音视频{@link AV_SHARE} or 屏幕共享{@link SCREEN_SHARE}
      */
     createOfferHandle(account, pc, mediaType) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] create offer")
         pc.createOffer({
             // offerToReceiveAudio:1,
             offerToReceiveVideo: 1
@@ -144,16 +145,14 @@ class RTCService {
 
                 // 保存account和pc的映射关系
                 if (mediaType === AV_SHARE) {
-                    console.log(">>> ", new Date().toLocaleTimeString(), " [info] 保存 AV PC , account: ", account)
                     client.addRemoteAvPC(account, pc);
                 } else {
-                    console.log(">>> ", new Date().toLocaleTimeString(), " [info] 保存 Screen PC , account: ", account)
                     client.addRemoteScreenPC(account, pc)
                 }
 
                 // 设置negotiation监听
                 pc.onnegotiationneeded = () => {
-                    console.log(">>> ", new Date().toLocaleTimeString(), " [info] ", account, "的 negotiationneeded 消息")
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [info] 收到 negotiationneeded 消息")
                     this.createOfferHandle(account, pc, mediaType)
                 }
 

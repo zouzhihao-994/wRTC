@@ -144,6 +144,7 @@ class Client {
     }
 
     addRemoteScreenPC(remoteScreenName, peer) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] 保存 Screen PC , account: ", remoteScreenName)
         this._remoteScreenPC[remoteScreenName] = peer
     }
 
@@ -152,6 +153,7 @@ class Client {
     }
 
     addRemoteAvPC(peerName, pc) {
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] 保存 AV PC , account: ", peerName)
         this._remoteAvPC[peerName] = pc
     }
 

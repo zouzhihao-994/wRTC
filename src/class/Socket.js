@@ -206,27 +206,28 @@ class Socket {
             return;
         }
         // 屏幕共享的形式
-        console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, " 的 offer 消息")
+        console.log(">>> ", new Date().toLocaleTimeString(), " [info] 收到", data.source, " 的 offer 消息")
         if (data.mediaType === SCREEN_SHARE) {
-            // data.source 是发送方的account,发送方也就是本端的对端
-            client.remoteScreenPC[data.source] && client.remoteScreenPC[data.source].setRemoteDescription(data.sdp, () => {
-                client.remoteScreenPC[data.source].createAnswer().then((desc) => {
-                    client.remoteScreenPC[data.source].setLocalDescription(desc, () => {
-                        this.emitAnswer(data.source, client.roomId, client.remoteScreenPC[data.source].localDescription, SCREEN_SHARE)
+            client.remoteScreenPC(data.source) && client.remoteScreenPC(data.source).setRemoteDescription(data.sdp, () => {
+                console.log(">>> ", new Date().toLocaleTimeString(), " [info] set remote description success ,sdp = ", data.sdp)
+                client.remoteScreenPC(data.source).createAnswer().then((desc) => {
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [info] created answer success , local description = ", desc)
+                    client.remoteScreenPC(data.source).setLocalDescription(desc, () => {
+                        this.emitAnswer(data.source, client.roomId, client.remoteScreenPC(data.source).localDescription, SCREEN_SHARE)
                     }, (err) => {
-                        console.log(">>> ", new Date().toLocaleTimeString(), " [错误]: setLocalDescription error , ", err)
+                        console.log(">>> ", new Date().toLocaleTimeString(), " [error] setLocalDescription error , ", err)
                     })
                 }, (err) => {
-                    console.log(">>> ", new Date().toLocaleTimeString(), " [错误]: createAnswer error , ", err)
+                    console.log(">>> ", new Date().toLocaleTimeString(), " [error] createAnswer error , ", err)
                 })
             }, (err) => {
-                console.log(">>> ", new Date().toLocaleTimeString(), " [错误]: setRemoteDescription error , ", err)
+                console.log(">>> ", new Date().toLocaleTimeString(), " [error] setRemoteDescription error , ", err)
             })
         } else { //音视频形式
-            client.remoteAvPC[data.source] && client.remoteAvPC[data.source].setRemoteDescription(data.sdp, () => {
-                client.remoteAvPC[data.source].createAnswer().then(desc => {
-                    client.remoteAvPC[data.source].setLocalDescription(desc, () => {
-                        this.emitAnswer(data.source, client.roomId, client.remoteAvPC[data.source].localDescription, AV_SHARE)
+            client.remoteAvPC(data.source) && client.remoteAvPC(data.source).setRemoteDescription(data.sdp, () => {
+                client.remoteAvPC(data.source).createAnswer().then(desc => {
+                    client.remoteAvPC(data.source).setLocalDescription(desc, () => {
+                        this.emitAnswer(data.source, client.roomId, client.remoteAvPC(data.source).localDescription, AV_SHARE)
                     })
                 })
             }, (err) => {
@@ -250,9 +251,9 @@ class Socket {
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, "的 answer 消息")
         // 屏幕共享模式
         if (data.mediaType === SCREEN_SHARE) {
-            client.remoteScreenPC[data.source] && client.remoteScreenPC[data.source].setRemoteDescription(data.sdp, () => {
+            client.remoteScreenPC(data.source) && client.remoteScreenPC(data.source).setRemoteDescription(data.sdp, () => {
                 // 设置ice监听
-                client.remoteScreenPC[data.source].remoteScreenPC = (event) => {
+                client.remoteScreenPC(data.source).onicecandidate = (event) => {
                     console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, "的 icecandidate 消息")
                     if (event.candidate) {
                         socket.emitIceCandidate(event.candidate, data.source, data.mediaType)
@@ -262,9 +263,9 @@ class Socket {
                 console.error('setRemoteDescription error:', err, data.source);
             })
         } else { // 音视频模式
-            client.remoteAvPC[data.source] && client.remoteAvPC[data.source].setRemoteDescription(data.sdp, () => {
+            client.remoteAvPC(data.source) && client.remoteAvPC(data.source).setRemoteDescription(data.sdp, () => {
                 // 设置ice监听
-                client.remoteAvPC[data.source].onicecandidate = (event) => {
+                client.remoteAvPC(data.source).onicecandidate = (event) => {
                     console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, "的 icecandidate 消息")
                     if (event.candidate) {
                         socket.emitIceCandidate(event.candidate, data.source, data.mediaType)
@@ -289,13 +290,13 @@ class Socket {
         console.log(">>> ", new Date().toLocaleTimeString(), " [收到]: ", data.source, " 发送的ice candidate", data)
         if (data.mediaType === SCREEN_SHARE) {
             if (data.candidate) {
-                client.remoteScreenPC[data.source].addIceCandidate(data.candidate).catch((err) => {
+                client.remoteScreenPC(data.source).addIceCandidate(data.candidate).catch((err) => {
                     console.error('addIceCandidate error:', err);
                 })
             }
         } else {
             if (data.candidate) {
-                client.remoteAvPC[data.source].addIceCandidate(data.candidate).catch((err) => {
+                client.remoteAvPC(data.source).addIceCandidate(data.candidate).catch((err) => {
                     console.error('addIceCandidate error:', err);
                 });
             }
