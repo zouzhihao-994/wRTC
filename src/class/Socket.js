@@ -162,7 +162,6 @@ class Socket {
             rtcService.delRemoteScreen(source)
             callback.onUnScreenShared(source)
         } else { // 关闭 av pc
-
         }
     }
 

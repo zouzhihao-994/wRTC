@@ -254,8 +254,9 @@ class RTCService {
      */
     delRemoteScreen(account) {
         console.log(">>> ", new Date().toLocaleTimeString(), " [info] del remote screen: ", account, "的屏幕流")
-        let pc = client.remoteScreenPC[account]
+        let pc = client.remoteScreenPC(account)
         this.delPcCallback(pc)
+        pc.close()
         client.delRemoteScreenPC(account)
         client.delScreenSharingPeer(account)
     }
